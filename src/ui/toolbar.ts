@@ -10,6 +10,7 @@ export type ToolbarCallbacks = {
 export type ToolbarHandle = {
   setGroupPickActive(active: boolean): void;
   setCanGroup(can: boolean): void;
+  setCanNew(can: boolean): void;
 };
 
 export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): ToolbarHandle {
@@ -19,13 +20,17 @@ export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): To
     ["save",   "Salvar",   cbs.onSave],
     ["export", "Exportar", cbs.onExport],
   ];
+  const actionButtons = new Map<string, HTMLButtonElement>();
   for (const [action, label, fn] of buttons) {
     const btn = document.createElement("button");
     btn.dataset.action = action;
     btn.textContent = label;
     btn.addEventListener("click", fn);
     container.appendChild(btn);
+    actionButtons.set(action, btn);
   }
+  const newBtn = actionButtons.get("new")!;
+  newBtn.disabled = true;
 
   const sep = document.createElement("span");
   sep.className = "toolbar-sep";
@@ -51,6 +56,9 @@ export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): To
     },
     setCanGroup(can: boolean) {
       groupBtn.disabled = !can;
+    },
+    setCanNew(can: boolean) {
+      newBtn.disabled = !can;
     },
   };
 }

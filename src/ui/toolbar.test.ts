@@ -29,9 +29,25 @@ describe("createToolbar", () => {
   it("clicar em novo chama onNew", () => {
     const onNew = vi.fn();
     const el = document.createElement("div");
-    createToolbar(el, mockCbs({ onNew }));
+    const toolbar = createToolbar(el, mockCbs({ onNew }));
+    toolbar.setCanNew(true);
     (el.querySelector("[data-action='new']") as HTMLElement).click();
     expect(onNew).toHaveBeenCalledOnce();
+  });
+
+  it("novo fica desabilitado sem conteudo no projeto", () => {
+    const el = document.createElement("div");
+    createToolbar(el, mockCbs());
+    const newBtn = el.querySelector("[data-action='new']") as HTMLButtonElement;
+    expect(newBtn.disabled).toBe(true);
+  });
+
+  it("novo habilita quando ha conteudo", () => {
+    const el = document.createElement("div");
+    const toolbar = createToolbar(el, mockCbs());
+    toolbar.setCanNew(true);
+    const newBtn = el.querySelector("[data-action='new']") as HTMLButtonElement;
+    expect(newBtn.disabled).toBe(false);
   });
 
   it("clicar em salvar chama onSave", () => {

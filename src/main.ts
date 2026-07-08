@@ -304,6 +304,7 @@ function refreshUI() {
 
   toolbarHandle.setGroupPickActive(edState.groupPickMode);
   toolbarHandle.setCanGroup(canCreateGroup());
+  toolbarHandle.setCanNew(project.panels.length > 0);
 
   piecesD.update(project.panels);
   piecesM.update(project.panels);
