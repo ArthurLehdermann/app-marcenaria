@@ -109,7 +109,7 @@ export function importProject(text: string): Project {
     if (typeof p.height !== "number" || p.height <= 0)
       throw new Error(`Altura invalida em ${p.name ?? p.id}`);
     p.visible ??= true;
-    p.type ??= "";
+    delete p.type;
   }
   raw.appVersion ??= "0.1.0";
   raw.groups ??= [];

@@ -11,7 +11,7 @@ import type { Panel, Project, UUID } from "./types";
 
 function makePanel(over: Partial<Panel> = {}): Panel {
   return {
-    id: over.id ?? "p1", type: "", name: over.name ?? "Painel",
+    id: over.id ?? "p1", name: over.name ?? "Painel",
     width: 720, height: 560, thickness: 18,
     position: { x: 0, y: 0, z: 0 }, upAxis: "y",
     edges: { top: false, bottom: false, left: false, right: false },

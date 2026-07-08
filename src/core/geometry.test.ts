@@ -6,7 +6,6 @@ import type { Panel, UpAxis } from "./types";
 function makePanel(over: Partial<Panel> = {}): Panel {
   return {
     id: over.id ?? "p1",
-    type: "",
     name: over.name ?? "painel",
     width: over.width ?? 720,
     height: over.height ?? 560,

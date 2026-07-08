@@ -6,7 +6,7 @@ import type { Collision as Col } from "../core/collision";
 
 function makePanel(id: string, name: string): Panel {
   return {
-    id, type: "", name, width: 100, height: 100, thickness: 18,
+    id, name, width: 100, height: 100, thickness: 18,
     position: { x: 0, y: 0, z: 0 }, upAxis: "y",
     edges: { top: false, bottom: false, left: false, right: false },
     color: "#ccc", visible: true,

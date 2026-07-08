@@ -367,7 +367,7 @@ const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
 
 function addNewPanel() {
   const panel: Panel = {
-    id: crypto.randomUUID(), type: "", name: "Painel",
+    id: crypto.randomUUID(), name: "Painel",
     width: 400, height: 600,
     thickness: project.settings.defaultThickness,
     position: { x: 0, y: 0, z: 0 },

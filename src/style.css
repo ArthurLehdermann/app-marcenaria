@@ -323,8 +323,33 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 0 10px;
 }
+#m-properties .props-size-grid,
+#properties .props-size-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0 8px;
+  margin-bottom: 4px;
+}
+#properties .props-size-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+}
+#properties .props-size-grid > label input {
+  margin-top: 0;
+  width: 100%;
+}
 #m-properties .props-dim-grid > label,
-#m-properties .props-pos-grid > label {
+#m-properties .props-pos-grid > label,
+#m-properties .props-size-grid > label,
+#properties .props-size-grid > label {
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -337,7 +362,9 @@ html, body {
   color: var(--muted);
 }
 #m-properties .props-dim-grid > label input,
-#m-properties .props-pos-grid > label input {
+#m-properties .props-pos-grid > label input,
+#m-properties .props-size-grid > label input,
+#properties .props-size-grid > label input {
   margin-top: 0;
   width: 100%;
 }

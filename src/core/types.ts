@@ -22,7 +22,6 @@ export type UpAxis = "x" | "y" | "z";
 
 export type Panel = {
   id: UUID;
-  type: string;
   name: string;
   width: Millimeters;
   height: Millimeters;

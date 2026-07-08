@@ -5,7 +5,7 @@ import type { Panel } from "../core/types";
 
 function makePanel(over: Partial<Panel> = {}): Panel {
   return {
-    id: over.id ?? "p1", type: "", name: over.name ?? "p",
+    id: over.id ?? "p1", name: over.name ?? "p",
     width: over.width ?? 720, height: over.height ?? 560, thickness: over.thickness ?? 18,
     position: { x: 0, y: 0, z: 0 }, upAxis: "y",
     edges: { top: false, bottom: false, left: false, right: false },

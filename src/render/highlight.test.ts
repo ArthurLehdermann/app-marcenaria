@@ -6,7 +6,7 @@ import type { Panel } from "../core/types";
 
 function makePanel(color = "#8888aa"): Panel {
   return {
-    id: "p1", type: "", name: "p", width: 300, height: 200, thickness: 18,
+    id: "p1", name: "p", width: 300, height: 200, thickness: 18,
     position: { x: 0, y: 0, z: 0 }, upAxis: "y",
     edges: { top: false, bottom: false, left: false, right: false },
     color, visible: true,

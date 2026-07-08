@@ -8,7 +8,7 @@ import type { Panel, Project } from "./types";
 function makePanel(over: Partial<Panel> = {}): Panel {
   return {
     id: over.id ?? crypto.randomUUID(),
-    type: "", name: over.name ?? "p",
+    name: over.name ?? "p",
     width: 400, height: 600, thickness: 18,
     position: over.position ?? { x: 0, y: 0, z: 0 },
     upAxis: "y",

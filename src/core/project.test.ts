@@ -10,7 +10,6 @@ import type { Panel, Project } from "./types";
 function makePanel(over: Partial<Panel> = {}): Panel {
   return {
     id: over.id ?? "p1",
-    type: over.type ?? "",
     name: over.name ?? "painel",
     width: over.width ?? 720,
     height: over.height ?? 560,
@@ -303,12 +302,12 @@ describe("importProject", () => {
     expect(imported.panels[0].visible).toBe(true);
   });
 
-  it("completa type ausente como string vazia", () => {
+  it("remove type legado na importacao", () => {
     const proj = makeProject([makePanel()]);
     const raw = JSON.parse(JSON.stringify(proj));
-    delete raw.panels[0].type;
+    raw.panels[0].type = "Lateral";
     const imported = importProject(JSON.stringify(raw));
-    expect(imported.panels[0].type).toBe("");
+    expect((imported.panels[0] as Panel & { type?: string }).type).toBeUndefined();
   });
 
   it("completa appVersion ausente como 0.1.0", () => {
