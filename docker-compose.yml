@@ -1,0 +1,30 @@
+# Deploy:
+#   docker compose -p marcenaria up -d --build
+#
+# Domínio:
+#   marcenaria.morla.com.br  → app (Vite static)
+
+networks:
+  traefik_public:
+    external: true
+
+services:
+  web:
+    build: .
+    image: ${REGISTRY:-ghcr.io/arthurlehdermann}/app-marcenaria:${IMAGE_TAG:-latest}
+    container_name: marcenaria_web
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
+    networks:
+      - traefik_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.marcenaria-web.rule=Host(`marcenaria.morla.com.br`)"
+      - "traefik.http.routers.marcenaria-web.entrypoints=websecure"
+      - "traefik.http.routers.marcenaria-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.marcenaria-web.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_public"
