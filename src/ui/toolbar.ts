@@ -1,3 +1,9 @@
+export type ToolbarMobileMenu = {
+  wrap: HTMLElement;
+  toggle: HTMLElement;
+  overlay: HTMLElement;
+};
+
 export type ToolbarCallbacks = {
   onNew(): void;
   onOpen(): void;
@@ -13,7 +19,33 @@ export type ToolbarHandle = {
   setCanNew(can: boolean): void;
 };
 
-export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): ToolbarHandle {
+export function createToolbar(
+  container: HTMLElement,
+  cbs: ToolbarCallbacks,
+  mobile?: ToolbarMobileMenu,
+): ToolbarHandle {
+  let closeMenu: (() => void) | undefined;
+
+  if (mobile) {
+    const { wrap, toggle, overlay } = mobile;
+    closeMenu = () => {
+      wrap.classList.remove("open");
+      overlay.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    };
+    toggle.addEventListener("click", () => {
+      const open = wrap.classList.toggle("open");
+      overlay.classList.toggle("open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    });
+    overlay.addEventListener("click", closeMenu);
+  }
+
+  const run = (fn: () => void) => () => {
+    fn();
+    closeMenu?.();
+  };
+
   const buttons: Array<[string, string, () => void]> = [
     ["new",    "Novo",     cbs.onNew],
     ["open",   "Abrir",    cbs.onOpen],
@@ -25,7 +57,7 @@ export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): To
     const btn = document.createElement("button");
     btn.dataset.action = action;
     btn.textContent = label;
-    btn.addEventListener("click", fn);
+    btn.addEventListener("click", run(fn));
     container.appendChild(btn);
     actionButtons.set(action, btn);
   }
@@ -40,14 +72,14 @@ export function createToolbar(container: HTMLElement, cbs: ToolbarCallbacks): To
   pickBtn.dataset.action = "group-pick";
   pickBtn.textContent = "Selecionar";
   pickBtn.title = "Marcar peças para agrupar (Shift+clique também funciona)";
-  pickBtn.addEventListener("click", cbs.onToggleGroupPick);
+  pickBtn.addEventListener("click", run(cbs.onToggleGroupPick));
   container.appendChild(pickBtn);
 
   const groupBtn = document.createElement("button");
   groupBtn.dataset.action = "group";
   groupBtn.textContent = "Agrupar";
   groupBtn.disabled = true;
-  groupBtn.addEventListener("click", cbs.onGroupSelected);
+  groupBtn.addEventListener("click", run(cbs.onGroupSelected));
   container.appendChild(groupBtn);
 
   return {

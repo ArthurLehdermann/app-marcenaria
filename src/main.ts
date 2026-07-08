@@ -359,6 +359,10 @@ const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
     if (name === null) return;
     doGroup(name);
   },
+}, {
+  wrap: document.getElementById("toolbar-wrap")!,
+  toggle: document.getElementById("btn-toolbar-menu")!,
+  overlay: document.getElementById("toolbar-menu-overlay")!,
 });
 
 function addNewPanel() {

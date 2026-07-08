@@ -65,4 +65,35 @@ describe("createToolbar", () => {
     (el.querySelector("[data-action='export']") as HTMLElement).click();
     expect(onExport).toHaveBeenCalledOnce();
   });
+
+  it("menu mobile abre e fecha com toggle e overlay", () => {
+    const toolbarEl = document.createElement("div");
+    const wrap = document.createElement("div");
+    wrap.appendChild(toolbarEl);
+    const toggle = document.createElement("button");
+    const overlay = document.createElement("div");
+    createToolbar(toolbarEl, mockCbs(), { wrap, toggle, overlay });
+
+    toggle.click();
+    expect(wrap.classList.contains("open")).toBe(true);
+    expect(overlay.classList.contains("open")).toBe(true);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+
+    overlay.click();
+    expect(wrap.classList.contains("open")).toBe(false);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("menu mobile fecha ao clicar em acao", () => {
+    const toolbarEl = document.createElement("div");
+    const wrap = document.createElement("div");
+    wrap.appendChild(toolbarEl);
+    const toggle = document.createElement("button");
+    const overlay = document.createElement("div");
+    createToolbar(toolbarEl, mockCbs(), { wrap, toggle, overlay });
+
+    toggle.click();
+    (toolbarEl.querySelector("[data-action='save']") as HTMLElement).click();
+    expect(wrap.classList.contains("open")).toBe(false);
+  });
 });
