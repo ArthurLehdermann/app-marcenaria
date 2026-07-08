@@ -94,16 +94,27 @@ export function createPropertiesPanel(
     const positionTarget = targets.position ?? form;
     const edgeTarget = targets.edge ?? form;
 
-    appendField(generalTarget, "Nome", "name", p.name);
-    appendField(generalTarget, "Tipo", "type", p.type);
-
-    const dimGrid = document.createElement("div");
-    dimGrid.className = layout === "tabs" ? "props-dim-grid" : "props-dim-stack";
-    generalTarget.appendChild(dimGrid);
-    appendField(dimGrid, "Largura", "width", String(p.width), "number");
-    appendField(dimGrid, "Altura", "height", String(p.height), "number");
-    appendField(dimGrid, "Espessura", "thickness", String(p.thickness), "number");
-    appendField(generalTarget, "Cor", "color", p.color, "color");
+    if (layout === "tabs") {
+      const dimGrid = document.createElement("div");
+      dimGrid.className = "props-dim-grid";
+      generalTarget.appendChild(dimGrid);
+      appendField(dimGrid, "Nome", "name", p.name);
+      appendField(dimGrid, "Tipo", "type", p.type);
+      appendField(dimGrid, "Largura", "width", String(p.width), "number");
+      appendField(dimGrid, "Altura", "height", String(p.height), "number");
+      appendField(dimGrid, "Espessura", "thickness", String(p.thickness), "number");
+      appendField(dimGrid, "Cor", "color", p.color, "color");
+    } else {
+      appendField(generalTarget, "Nome", "name", p.name);
+      appendField(generalTarget, "Tipo", "type", p.type);
+      const dimGrid = document.createElement("div");
+      dimGrid.className = "props-dim-stack";
+      generalTarget.appendChild(dimGrid);
+      appendField(dimGrid, "Largura", "width", String(p.width), "number");
+      appendField(dimGrid, "Altura", "height", String(p.height), "number");
+      appendField(dimGrid, "Espessura", "thickness", String(p.thickness), "number");
+      appendField(generalTarget, "Cor", "color", p.color, "color");
+    }
 
     if (layout === "stack") {
       sectionLabel(positionTarget, "Posição (mm)");

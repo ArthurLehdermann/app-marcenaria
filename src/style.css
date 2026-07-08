@@ -323,7 +323,6 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 0 10px;
 }
-#m-properties .props-dim-grid label:last-child,
 #m-properties .props-pos-grid label:last-child {
   grid-column: 1 / -1;
 }
