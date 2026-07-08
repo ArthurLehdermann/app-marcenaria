@@ -26,6 +26,8 @@ import { createProblemsPanel } from "./ui/problemsPanel";
 import { createToolbar } from "./ui/toolbar";
 import { createDoubleTapHandler } from "./ui/doubleTap";
 import { setupOnboarding } from "./ui/onboarding";
+import { preventDoubleTapZoom } from "./ui/preventDoubleTapZoom";
+import { setupProjectNameEdit } from "./ui/projectName";
 import {
   createEditorState, clickSelect, setSelection, clearSelection,
   toggleGroupPickMode, primarySelectedId,
@@ -50,6 +52,15 @@ function newProject(): Project {
 
 let project: Project = newProject();
 let edState = createEditorState();
+
+const projectNameEl = document.getElementById("project-name") as HTMLButtonElement;
+const projectNameHandle = setupProjectNameEdit(
+  projectNameEl,
+  () => project.name,
+  (name) => { project = { ...project, name, updatedAt: new Date().toISOString() }; },
+);
+
+preventDoubleTapZoom();
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const { scene, camera, controls, invalidate, renderer, isSpacePanActive } = createScene(canvas);
@@ -278,6 +289,8 @@ function refreshUI() {
   const collisionIds = new Set(collisions.flatMap(c => [c.a, c.b]));
   const gid = activeGroupId();
 
+  projectNameHandle.sync();
+
   treeD.update(project, edState.selectedPanelIds, collisionIds, edState.groupPickMode);
   treeM.update(project, edState.selectedPanelIds, collisionIds, edState.groupPickMode);
 
@@ -398,6 +411,17 @@ function pickPanelAt(clientX: number, clientY: number): UUID | null {
   return pickPanel(ndc, camera, [...meshMap.values()]);
 }
 
+canvas.addEventListener("touchend", (e) => {
+  if (!isMobileViewport() || isSpacePanActive()) return;
+  if (e.changedTouches.length !== 1) return;
+  const touch = e.changedTouches[0]!;
+  const id = pickPanelAt(touch.clientX, touch.clientY);
+  if (!id) return;
+  if (canvasDoubleTap(id, touch.clientX, touch.clientY)) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
 canvas.addEventListener("click", (e) => {
   if (isSpacePanActive() || selectionDrag.consumeClick()) return;
   const id = pickPanelAt(e.clientX, e.clientY);
@@ -407,7 +431,6 @@ canvas.addEventListener("click", (e) => {
     closeMobileProps();
     return;
   }
-  if (isMobileViewport() && canvasDoubleTap(id, e.clientX, e.clientY)) return;
   handleSelect(id, e.shiftKey);
 });
 
