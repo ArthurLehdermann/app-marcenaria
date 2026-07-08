@@ -449,6 +449,10 @@ function closeMobileProps() {
 document.getElementById("btn-close-props")?.addEventListener("click", closeMobileProps);
 mPropsOverlay.addEventListener("click", closeMobileProps);
 
+for (const type of ["gesturestart", "gesturechange", "gestureend"] as const) {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+}
+
 function onResize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;

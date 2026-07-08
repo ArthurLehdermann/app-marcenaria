@@ -32,11 +32,30 @@ html, body {
   color: var(--text);
   font: 13px/1.5 var(--font-ui);
   overflow: hidden;
+  overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
-/* ── app shell (mobile-first) ────────────────────────────────────────────── */
-#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app input,
+#app textarea,
+#app select {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
 
 /* topbar */
 #topbar {
@@ -143,7 +162,7 @@ html, body {
 #bottom-strip { display: none; }
 
 /* viewport */
-#viewport { flex: 1; position: relative; overflow: hidden; }
+#viewport { flex: 1; position: relative; overflow: hidden; touch-action: none; }
 #canvas {
   display: block; width: 100%; height: 100%;
   touch-action: none;
@@ -201,6 +220,7 @@ html, body {
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--border);
+  touch-action: manipulation;
 }
 .mnav-btn {
   flex: 1;
@@ -211,6 +231,8 @@ html, body {
   cursor: pointer;
   transition: color .15s;
   padding: 0;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .mnav-btn.active { color: var(--accent); }
 .mnav-btn svg { flex-shrink: 0; }
@@ -563,6 +585,8 @@ html, body {
   border-bottom: 1px solid rgba(255,255,255,.03);
   transition: background .1s;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 [data-panel-id]:hover { background: var(--surface-2); }
 [data-panel-id][aria-selected="true"] { background: var(--selected-bg); border-left: 2px solid var(--selected); }
