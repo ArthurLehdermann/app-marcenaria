@@ -385,6 +385,87 @@ html, body {
   font-size: 16px; cursor: pointer; padding: 4px;
 }
 
+/* ── onboarding (primeira visita) ─────────────────────────────────────────── */
+#onboarding-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .1);
+}
+#onboarding-overlay.open {
+  display: flex;
+}
+#onboarding-dialog {
+  width: min(100%, 420px);
+  max-height: min(88vh, 560px);
+  overflow-y: auto;
+  padding: 20px 22px 18px;
+  background: color-mix(in srgb, var(--surface-2) 90%, transparent);
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+#onboarding-title {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.onboarding-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.onboarding-tips {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.onboarding-tip {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.onboarding-keys {
+  flex-shrink: 0;
+  min-width: 7.5rem;
+  padding: 4px 8px;
+  border-radius: var(--r);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font: 500 11px var(--font-mono);
+  color: var(--accent-hi);
+  text-align: center;
+}
+.onboarding-text {
+  color: var(--text);
+}
+#btn-onboarding-close {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--r);
+  background: var(--accent);
+  color: #fff;
+  font: 600 13px var(--font-ui);
+  cursor: pointer;
+  transition: background .12s;
+}
+#btn-onboarding-close:hover {
+  background: var(--accent-hi);
+}
+
 /* ── panel tree ──────────────────────────────────────────────────────────── */
 .tree-pick-hint {
   padding: 8px 10px; font-size: 11px; color: var(--accent-hi);

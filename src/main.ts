@@ -25,6 +25,7 @@ import { createPiecesPanel } from "./ui/piecesPanel";
 import { createProblemsPanel } from "./ui/problemsPanel";
 import { createToolbar } from "./ui/toolbar";
 import { createDoubleTapHandler } from "./ui/doubleTap";
+import { setupOnboarding } from "./ui/onboarding";
 import {
   createEditorState, clickSelect, setSelection, clearSelection,
   toggleGroupPickMode, primarySelectedId,
@@ -464,4 +465,5 @@ requestAnimationFrame(() => {
   onResize();
   syncMeshes();
   refreshUI();
+  setupOnboarding();
 });
