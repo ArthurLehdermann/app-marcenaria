@@ -317,8 +317,7 @@ html, body {
   line-height: 1.4;
   color: var(--muted);
 }
-#m-properties .props-dim-grid,
-#m-properties .props-pos-grid {
+#m-properties .props-dim-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 10px;
@@ -347,7 +346,6 @@ html, body {
   width: 100%;
 }
 #m-properties .props-dim-grid > label,
-#m-properties .props-pos-grid > label,
 #m-properties .props-size-grid > label,
 #properties .props-size-grid > label {
   display: flex;
@@ -362,14 +360,10 @@ html, body {
   color: var(--muted);
 }
 #m-properties .props-dim-grid > label input,
-#m-properties .props-pos-grid > label input,
 #m-properties .props-size-grid > label input,
 #properties .props-size-grid > label input {
   margin-top: 0;
   width: 100%;
-}
-#m-properties .props-pos-grid > label:last-child {
-  grid-column: 1 / -1;
 }
 #m-properties [data-panel-form] .actions {
   margin-top: 10px;

@@ -121,7 +121,7 @@ export function createPropertiesPanel(
       sectionLabel(positionTarget, "Posição (mm)");
     }
     const posGrid = document.createElement("div");
-    posGrid.className = layout === "tabs" ? "props-pos-grid" : "props-dim-stack";
+    posGrid.className = "props-size-grid";
     positionTarget.appendChild(posGrid);
     appendField(posGrid, "X", "pos_x", String(Math.round(p.position.x)), "number");
     appendField(posGrid, "Y", "pos_y", String(Math.round(p.position.y)), "number");
