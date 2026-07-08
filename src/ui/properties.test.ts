@@ -117,4 +117,33 @@ describe("createPropertiesPanel", () => {
     expect(el.querySelector<HTMLElement>("[data-tab-pane='position']")?.hidden).toBe(false);
     expect(el.querySelector<HTMLElement>("[data-tab-pane='general']")?.hidden).toBe(true);
   });
+
+  it("layout tabs mantem aba ativa ao atualizar painel", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(
+      el,
+      { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() },
+      { layout: "tabs" },
+    );
+    pp.update(makePanel());
+    (el.querySelector("[data-tab='edge']") as HTMLElement).click();
+    pp.update(makePanel({ edges: { top: true, bottom: false, left: false, right: false } }));
+    expect(el.querySelector<HTMLElement>(".props-tabs")?.dataset.activeTab).toBe("edge");
+    expect(el.querySelector<HTMLElement>("[data-tab-pane='edge']")?.hidden).toBe(false);
+  });
+
+  it("borda usa nomes por extenso", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(
+      el,
+      { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() },
+      { layout: "tabs" },
+    );
+    pp.update(makePanel());
+    const labels = [...el.querySelectorAll(".edge-row label")].map(l => l.textContent?.trim());
+    expect(labels).toContain("Superior");
+    expect(labels).toContain("Inferior");
+    expect(labels).toContain("Esquerda");
+    expect(labels).toContain("Direita");
+  });
 });

@@ -19,8 +19,15 @@ export function createPropertiesPanel(
   options: PropertiesPanelOptions = {},
 ) {
   const layout = options.layout ?? "stack";
+  let activeTab: TabId = "general";
 
   function update(panel: Panel | null) {
+    if (layout === "tabs") {
+      const current = container.querySelector<HTMLElement>(".props-tabs")?.dataset.activeTab;
+      if (current === "general" || current === "position" || current === "edge") {
+        activeTab = current;
+      }
+    }
     container.innerHTML = "";
     if (!panel) return;
     const p = panel;
@@ -139,7 +146,12 @@ export function createPropertiesPanel(
     const edgeRow = document.createElement("div");
     edgeRow.className = "edge-row";
     const edgeSides: EdgeSide[] = ["top", "bottom", "left", "right"];
-    const edgeLabels: Record<EdgeSide, string> = { top: "Sup", bottom: "Inf", left: "Esq", right: "Dir" };
+    const edgeLabels: Record<EdgeSide, string> = {
+      top: "Superior",
+      bottom: "Inferior",
+      left: "Esquerda",
+      right: "Direita",
+    };
     for (const side of edgeSides) {
       const label = document.createElement("label");
       label.textContent = edgeLabels[side];
@@ -176,7 +188,7 @@ export function createPropertiesPanel(
     if (layout === "tabs") {
       const tabs = document.createElement("div");
       tabs.className = "props-tabs";
-      tabs.dataset.activeTab = "general";
+      tabs.dataset.activeTab = activeTab;
 
       const tabBar = document.createElement("div");
       tabBar.className = "props-tab-bar";
@@ -197,14 +209,15 @@ export function createPropertiesPanel(
         btn.className = "props-tab-btn";
         btn.dataset.tab = id;
         btn.setAttribute("role", "tab");
-        btn.setAttribute("aria-selected", id === "general" ? "true" : "false");
+        btn.setAttribute("aria-selected", id === activeTab ? "true" : "false");
         btn.textContent = label;
+        if (id === activeTab) btn.classList.add("active");
         tabBar.appendChild(btn);
 
         const pane = targets[id]!;
         pane.className = "props-tab-pane";
         pane.dataset.tabPane = id;
-        if (id !== "general") pane.hidden = true;
+        pane.hidden = id !== activeTab;
         tabBody.appendChild(pane);
       }
 
@@ -212,6 +225,7 @@ export function createPropertiesPanel(
         const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".props-tab-btn");
         if (!btn) return;
         const id = btn.dataset.tab as TabId;
+        activeTab = id;
         tabs.dataset.activeTab = id;
         tabBar.querySelectorAll(".props-tab-btn").forEach(b => {
           b.classList.toggle("active", b === btn);
@@ -222,7 +236,6 @@ export function createPropertiesPanel(
           pane.hidden = !active;
         });
       });
-      tabBar.querySelector(".props-tab-btn")?.classList.add("active");
 
       tabs.append(tabBar, tabBody);
       form.appendChild(tabs);
