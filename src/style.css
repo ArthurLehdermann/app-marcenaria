@@ -323,12 +323,26 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 0 10px;
 }
-#m-properties .props-pos-grid label:last-child {
-  grid-column: 1 / -1;
-}
-#m-properties .props-dim-grid label,
-#m-properties .props-pos-grid label {
+#m-properties .props-dim-grid > label,
+#m-properties .props-pos-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
   margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+}
+#m-properties .props-dim-grid > label input,
+#m-properties .props-pos-grid > label input {
+  margin-top: 0;
+  width: 100%;
+}
+#m-properties .props-pos-grid > label:last-child {
+  grid-column: 1 / -1;
 }
 #m-properties [data-panel-form] .actions {
   margin-top: 10px;

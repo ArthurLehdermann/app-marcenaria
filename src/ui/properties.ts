@@ -100,10 +100,10 @@ export function createPropertiesPanel(
       generalTarget.appendChild(dimGrid);
       appendField(dimGrid, "Nome", "name", p.name);
       appendField(dimGrid, "Tipo", "type", p.type);
-      appendField(dimGrid, "Largura", "width", String(p.width), "number");
-      appendField(dimGrid, "Altura", "height", String(p.height), "number");
       appendField(dimGrid, "Espessura", "thickness", String(p.thickness), "number");
       appendField(dimGrid, "Cor", "color", p.color, "color");
+      appendField(dimGrid, "Largura", "width", String(p.width), "number");
+      appendField(dimGrid, "Altura", "height", String(p.height), "number");
     } else {
       appendField(generalTarget, "Nome", "name", p.name);
       appendField(generalTarget, "Tipo", "type", p.type);
