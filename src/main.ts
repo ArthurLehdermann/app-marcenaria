@@ -24,6 +24,7 @@ import { createMultiSelectPanel } from "./ui/multiSelectPanel";
 import { createPiecesPanel } from "./ui/piecesPanel";
 import { createProblemsPanel } from "./ui/problemsPanel";
 import { createToolbar } from "./ui/toolbar";
+import { createDoubleTapHandler } from "./ui/doubleTap";
 import {
   createEditorState, clickSelect, setSelection, clearSelection,
   toggleGroupPickMode, primarySelectedId,
@@ -167,7 +168,6 @@ function handleSelect(id: UUID, additive: boolean) {
   }
   refreshUI();
   syncMeshes();
-  if (!useAdditive) openMobileProps();
 }
 
 function handleSelectGroup(groupId: UUID) {
@@ -175,7 +175,6 @@ function handleSelectGroup(groupId: UUID) {
   edState = setSelection(edState, members);
   refreshUI();
   syncMeshes();
-  openMobileProps();
 }
 
 function doGroup(name?: string) {
@@ -237,7 +236,10 @@ const groupPropsCallbacks = {
 };
 
 const treeD = createPanelTree(document.getElementById("panel-tree")!, panelCallbacks);
-const treeM = createPanelTree(document.getElementById("m-panel-tree")!, panelCallbacks);
+const treeM = createPanelTree(document.getElementById("m-panel-tree")!, {
+  ...panelCallbacks,
+  onOpenProps: () => openMobileProps(),
+});
 const propsD = createPropertiesPanel(document.getElementById("properties")!, propsCallbacks);
 const propsM = createPropertiesPanel(document.getElementById("m-properties")!, propsCallbacks, { layout: "tabs" });
 const groupPropsD = createGroupPropertiesPanel(document.getElementById("properties")!, groupPropsCallbacks);
@@ -384,20 +386,36 @@ document.getElementById("btn-add-panel")?.addEventListener("click", addNewPanel)
 document.getElementById("fab")?.addEventListener("click", addNewPanel);
 document.getElementById("viewport-hint")?.addEventListener("click", addNewPanel);
 
-canvas.addEventListener("click", (e) => {
-  if (isSpacePanActive() || selectionDrag.consumeClick()) return;
+const canvasDoubleTap = createDoubleTapHandler(() => openMobileProps());
+
+function pickPanelAt(clientX: number, clientY: number): UUID | null {
   const rect = canvas.getBoundingClientRect();
   const ndc = new Vector2(
-    ((e.clientX - rect.left) / rect.width) * 2 - 1,
-    -((e.clientY - rect.top) / rect.height) * 2 + 1,
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1,
   );
-  const id = pickPanel(ndc, camera, [...meshMap.values()]);
+  return pickPanel(ndc, camera, [...meshMap.values()]);
+}
+
+canvas.addEventListener("click", (e) => {
+  if (isSpacePanActive() || selectionDrag.consumeClick()) return;
+  const id = pickPanelAt(e.clientX, e.clientY);
   if (!id) {
     edState = clearSelection(edState);
     refreshUI(); syncMeshes();
+    closeMobileProps();
     return;
   }
+  if (isMobileViewport() && canvasDoubleTap(id, e.clientX, e.clientY)) return;
   handleSelect(id, e.shiftKey);
+});
+
+canvas.addEventListener("dblclick", (e) => {
+  if (!isMobileViewport() || isSpacePanActive() || selectionDrag.consumeClick()) return;
+  const id = pickPanelAt(e.clientX, e.clientY);
+  if (!id || !edState.selectedPanelIds.includes(id)) return;
+  e.preventDefault();
+  openMobileProps();
 });
 
 document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(btn => {
@@ -413,8 +431,12 @@ document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(btn => {
 const mPropsSheet = document.getElementById("m-props-sheet")!;
 const mPropsOverlay = document.getElementById("m-props-overlay")!;
 
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
 function openMobileProps() {
-  if (!primarySelectedId(edState)) return;
+  if (!isMobileViewport() || edState.selectedPanelIds.length === 0) return;
   mPropsSheet.classList.add("open");
   mPropsOverlay.classList.add("open");
 }

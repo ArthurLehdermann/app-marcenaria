@@ -6,6 +6,7 @@ import {
   type DropPlace,
 } from "../core/treeOrder";
 import { createEdgeIndicator } from "./edgeIndicator";
+import { createDoubleTapHandler } from "./doubleTap";
 
 export type TreeCallbacks = {
   onSelect(id: UUID, additive: boolean): void;
@@ -13,6 +14,7 @@ export type TreeCallbacks = {
   onVisibilityToggle(id: UUID, visible: boolean): void;
   onGroupVisibilityToggle(groupId: UUID, visible: boolean): void;
   onReorderTopLevel(activeId: UUID, overId: UUID, place: DropPlace): void;
+  onOpenProps?: () => void;
 };
 
 const GRIP_ICON = `<svg class="tree-drag-icon" width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true">
@@ -59,6 +61,7 @@ function appendPanelRow(
   collisionIds: Set<UUID> | undefined,
   cbs: TreeCallbacks,
   inGroup: boolean,
+  registerDoubleTap: ((key: string, x: number, y: number) => boolean) | null,
 ) {
   const item = document.createElement("div");
   item.dataset.panelId = p.id;
@@ -90,6 +93,7 @@ function appendPanelRow(
 
   item.addEventListener("click", (e) => {
     if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
+    if (registerDoubleTap?.(p.id, e.clientX, e.clientY)) return;
     cbs.onSelect(p.id, e.shiftKey);
   });
   container.appendChild(item);
@@ -101,6 +105,7 @@ function appendGroupBlock(
   members: Panel[],
   selectedIds: Set<UUID>,
   cbs: TreeCallbacks,
+  registerDoubleTap: ((key: string, x: number, y: number) => boolean) | null,
 ) {
   const block = document.createElement("div");
   block.className = "tree-block";
@@ -143,6 +148,7 @@ function appendGroupBlock(
 
   header.addEventListener("click", (e) => {
     if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
+    if (registerDoubleTap?.(group.id, e.clientX, e.clientY)) return;
     cbs.onSelectGroup(group.id);
   });
   block.appendChild(header);
@@ -150,7 +156,7 @@ function appendGroupBlock(
   const membersEl = document.createElement("div");
   membersEl.className = "tree-group-members";
   for (const p of members) {
-    appendPanelRow(membersEl, p, selectedIds, undefined, cbs, true);
+    appendPanelRow(membersEl, p, selectedIds, undefined, cbs, true, registerDoubleTap);
   }
   block.appendChild(membersEl);
 
@@ -231,6 +237,9 @@ function attachTreeDnD(container: HTMLElement, cbs: TreeCallbacks) {
 
 export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
   attachTreeDnD(container, cbs);
+  const registerDoubleTap = cbs.onOpenProps
+    ? createDoubleTapHandler(() => cbs.onOpenProps!())
+    : null;
 
   function update(
     project: Project,
@@ -259,6 +268,7 @@ export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
           orderedGroupMembers(project, group.id),
           sel,
           cbs,
+          registerDoubleTap,
         );
         continue;
       }
@@ -272,7 +282,7 @@ export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
       const block = document.createElement("div");
       block.className = "tree-block tree-block--solo";
       block.dataset.dropTopId = panel.id;
-      appendPanelRow(block, panel, sel, collisionIds, cbs, false);
+      appendPanelRow(block, panel, sel, collisionIds, cbs, false, registerDoubleTap);
       container.appendChild(block);
     }
   }
