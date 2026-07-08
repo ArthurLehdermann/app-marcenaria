@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marcenaria</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="toolbar"></header>
+
+    <div id="workspace">
+      <aside id="sidebar-left">
+        <div id="sidebar-header">
+          <span>Painéis</span>
+          <button id="btn-add-panel">+ Painel</button>
+        </div>
+        <div id="panel-tree"></div>
+      </aside>
+
+      <main id="viewport">
+        <canvas id="canvas"></canvas>
+      </main>
+
+      <aside id="sidebar-right">
+        <section id="properties"></section>
+      </aside>
+    </div>
+
+    <footer id="bottom-bar">
+      <div id="pieces-panel"></div>
+      <div id="problems-panel"></div>
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

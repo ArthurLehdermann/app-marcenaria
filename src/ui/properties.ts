@@ -12,6 +12,7 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
   function update(panel: Panel | null) {
     container.innerHTML = "";
     if (!panel) return;
+    const p = panel;
 
     const form = document.createElement("div");
     form.dataset.panelForm = "";
@@ -31,18 +32,18 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
         else if (name === "thickness") patch.thickness = Number(input.value);
         else if (name === "type") patch.type = input.value;
         else if (name === "color") patch.color = input.value;
-        cbs.onChange(panel.id, patch);
+        cbs.onChange(p.id, patch);
       });
       wrap.appendChild(input);
       form.appendChild(wrap);
     }
 
-    field("Nome", "name", panel.name);
-    field("Tipo", "type", panel.type);
-    field("Largura", "width", String(panel.width), "number");
-    field("Altura", "height", String(panel.height), "number");
-    field("Espessura", "thickness", String(panel.thickness), "number");
-    field("Cor", "color", panel.color, "color");
+    field("Nome", "name", p.name);
+    field("Tipo", "type", p.type);
+    field("Largura", "width", String(p.width), "number");
+    field("Altura", "height", String(p.height), "number");
+    field("Espessura", "thickness", String(p.thickness), "number");
+    field("Cor", "color", p.color, "color");
 
     // fita
     const edgeSides: EdgeSide[] = ["top", "bottom", "left", "right"];
@@ -53,9 +54,9 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.name = `edge_${side}`;
-      cb.checked = panel.edges[side];
+      cb.checked = p.edges[side];
       cb.addEventListener("change", () => {
-        cbs.onChange(panel.id, { edges: { ...panel.edges, [side]: cb.checked } });
+        cbs.onChange(p.id, { edges: { ...p.edges, [side]: cb.checked } });
       });
       label.appendChild(cb);
       form.appendChild(label);
@@ -63,9 +64,9 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
 
     // ações
     const actions: Array<[string, () => void]> = [
-      ["duplicate", () => cbs.onDuplicate(panel.id)],
-      ["rotate",    () => cbs.onRotate(panel.id)],
-      ["delete",    () => cbs.onDelete(panel.id)],
+      ["duplicate", () => cbs.onDuplicate(p.id)],
+      ["rotate",    () => cbs.onRotate(p.id)],
+      ["delete",    () => cbs.onDelete(p.id)],
     ];
     for (const [action, fn] of actions) {
       const btn = document.createElement("button");

@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from "vitest";
 import { createProblemsPanel } from "./problemsPanel";
-import type { Panel, Collision } from "../core/types";
-
-// Collision nao esta nos tipos ainda — usamos o tipo de collision.ts
+import type { Panel } from "../core/types";
 import type { Collision as Col } from "../core/collision";
 
 function makePanel(id: string, name: string): Panel {
