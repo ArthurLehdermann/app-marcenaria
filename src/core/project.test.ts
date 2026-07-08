@@ -20,6 +20,7 @@ function makePanel(over: Partial<Panel> = {}): Panel {
     edges: over.edges ?? { top: false, bottom: false, left: false, right: false },
     color: "#ccc",
     visible: over.visible ?? true,
+    groupId: over.groupId,
   };
 }
 
@@ -29,6 +30,7 @@ function makeProject(panels: Panel[] = []): Project {
     name: "Teste",
     settings: { defaultMaterial: "MDF 18 mm", defaultThickness: 18 },
     panels,
+    groups: [],
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     appVersion: "0.1.0",
@@ -76,6 +78,27 @@ describe("updatePanel", () => {
     const proj = makeProject([makePanel({ id: "a" })]);
     const updated = updatePanel(proj, "nope", { width: 1 });
     expect(updated.panels[0].width).toBe(720);
+  });
+
+  it("peca em grupo ignora dimensoes, fita e posicao", () => {
+    const grouped = makePanel({ id: "a", groupId: "g1", width: 720, visible: true });
+    const proj = makeProject([grouped]);
+    const updated = updatePanel(proj, "a", {
+      width: 999,
+      height: 888,
+      thickness: 25,
+      position: { x: 100, y: 0, z: 0 },
+      edges: { top: true, bottom: true, left: true, right: true },
+    });
+    expect(updated.panels[0].width).toBe(720);
+    expect(updated.panels[0].edges.top).toBe(false);
+    expect(updated.panels[0].position.x).toBe(0);
+  });
+
+  it("peca em grupo permite alterar visibilidade", () => {
+    const proj = makeProject([makePanel({ id: "a", groupId: "g1", visible: true })]);
+    const updated = updatePanel(proj, "a", { visible: false });
+    expect(updated.panels[0].visible).toBe(false);
   });
 });
 
@@ -147,6 +170,12 @@ describe("duplicatePanel", () => {
     const updated = duplicatePanel(proj, "nope");
     expect(updated.panels).toHaveLength(1);
   });
+
+  it("nao duplica peca em grupo", () => {
+    const proj = makeProject([makePanel({ id: "a", groupId: "g1" })]);
+    const updated = duplicatePanel(proj, "a");
+    expect(updated.panels).toHaveLength(1);
+  });
 });
 
 // ── rotate90 ──────────────────────────────────────────────────────────────────
@@ -201,6 +230,12 @@ describe("rotate90", () => {
   it("id inexistente retorna projeto igual", () => {
     const proj = makeProject([makePanel({ id: "a", upAxis: "y" })]);
     const updated = rotate90(proj, "nope");
+    expect(updated.panels[0].upAxis).toBe("y");
+  });
+
+  it("nao gira peca em grupo", () => {
+    const proj = makeProject([makePanel({ id: "a", upAxis: "y", groupId: "g1" })]);
+    const updated = rotate90(proj, "a");
     expect(updated.panels[0].upAxis).toBe("y");
   });
 });

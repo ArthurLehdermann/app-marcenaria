@@ -32,6 +32,14 @@ export type Panel = {
   edges: Record<EdgeSide, boolean>;
   color: string;
   visible: boolean;
+  groupId?: UUID;
+};
+
+export type PanelGroup = {
+  id: UUID;
+  name: string;
+  /** Ordem das peças dentro do bloco na árvore. */
+  memberOrder?: UUID[];
 };
 
 export type ProjectSettings = {
@@ -44,6 +52,9 @@ export type Project = {
   name: string;
   settings: ProjectSettings;
   panels: Panel[];
+  groups: PanelGroup[];
+  /** Ordem dos blocos/peças soltas na árvore (ids de grupo ou peça). */
+  treeOrder?: UUID[];
   createdAt: string;
   updatedAt: string;
   appVersion: string;
@@ -52,8 +63,9 @@ export type Project = {
 
 // Estado da sessao. Nunca persiste no arquivo do projeto.
 export type EditorState = {
-  selectedPanelId?: UUID;
+  selectedPanelIds: UUID[];
   hoveredPanelId?: UUID;
   showCollisions: boolean;
+  groupPickMode: boolean;
   camera: { position: Vec3; target: Vec3 };
 };

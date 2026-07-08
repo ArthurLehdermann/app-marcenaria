@@ -24,6 +24,7 @@ function makeProject(panels: Panel[], material = "MDF Ultra 18 mm"): Project {
     name: "Balcao",
     settings: { defaultMaterial: material, defaultThickness: 18 },
     panels,
+    groups: [],
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     appVersion: "0.1.0",
@@ -34,41 +35,42 @@ function makeProject(panels: Panel[], material = "MDF Ultra 18 mm"): Project {
 describe("buildWhatsappOrder", () => {
   it("comeca com cabecalho fixo", () => {
     const text = buildWhatsappOrder(makeProject([makePanel()]));
-    expect(text).toMatch(/^Bom dia/);
+    expect(text).toMatch(/^Olá!/);
   });
 
-  it("remove sufixo de espessura do nome do material", () => {
+  it("material e espessura numa linha, itens abaixo", () => {
     const text = buildWhatsappOrder(makeProject([makePanel()], "MDF Ultra 18 mm"));
-    expect(text).toContain("MDF Ultra 18 mm");
-    // bloco da espessura usa base sem sufixo + espessura real
-    expect(text).toContain("MDF Ultra 18 mm");
+    expect(text).toContain("MDF Ultra 18 mm\r\n1x 720x560 | -");
   });
 
-  it("dimensoes aparecem no formato qtd x LARG x ALT mm", () => {
+  it("dimensoes compactas qtd x LARGxALT", () => {
     const text = buildWhatsappOrder(makeProject([makePanel({ width: 720, height: 560, thickness: 18 })]));
-    expect(text).toContain("1x 720 x 560 mm");
+    expect(text).toContain("1x 720x560");
   });
 
-  it("fita sem nenhum lado mostra 'sem fita'", () => {
+  it("sem fita mostra traco", () => {
     const text = buildWhatsappOrder(makeProject([makePanel()]));
-    expect(text).toContain("Fita: sem fita");
+    expect(text).toContain("| -");
   });
 
-  it("fita com lados mostra rotulos em portugues", () => {
+  it("fita com lados usa abreviacoes", () => {
     const edges = { top: true, bottom: false, left: true, right: false };
     const text = buildWhatsappOrder(makeProject([makePanel({ edges })]));
-    expect(text).toContain("Superior");
-    expect(text).toContain("Esquerda");
+    expect(text).toContain("| Sup Esq");
   });
 
-  it("nome da peca aparece entre parenteses", () => {
-    const text = buildWhatsappOrder(makeProject([makePanel({ name: "Lateral esq" })]));
-    expect(text).toContain("(Lateral esq)");
+  it("pecas iguais agrupadas numa linha", () => {
+    const panels = [
+      makePanel({ id: "a", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
+      makePanel({ id: "b", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
+    ];
+    const text = buildWhatsappOrder(makeProject(panels));
+    expect(text).toContain("2x 600x742 | Inf Esq Dir");
   });
 
-  it("area por espessura aparece no bloco", () => {
+  it("rodape com area e total de pecas", () => {
     const text = buildWhatsappOrder(makeProject([makePanel({ width: 1000, height: 1000, thickness: 18 })]));
-    expect(text).toContain("Area 18 mm: 1.00 m2");
+    expect(text).toContain("1.00 m2, 1 pecas");
   });
 
   it("espessuras diferentes geram blocos separados, ordenados", () => {
@@ -81,14 +83,13 @@ describe("buildWhatsappOrder", () => {
     const idx18 = text.indexOf(" 18 mm");
     expect(idx6).toBeGreaterThan(-1);
     expect(idx18).toBeGreaterThan(-1);
-    // 6 mm aparece antes de 18 mm (ordem crescente)
     expect(idx6).toBeLessThan(idx18);
   });
 
   it("total de pecas no rodape", () => {
     const panels = [makePanel({ id: "a" }), makePanel({ id: "b" })];
     const text = buildWhatsappOrder(makeProject(panels));
-    expect(text).toContain("Total: 2 pecas");
+    expect(text).toContain(", 2 pecas");
   });
 });
 

@@ -35,7 +35,7 @@ describe("pickPanel", () => {
     // painel centrado na origem (position = {-100,-100,-9} com 200x200x18 → centro em {0,0,0})
     const panel = makePanel({ id: "alvo", position: { x: -100, y: -100, z: -9 } });
     const mesh = createPanelMesh(panel);
-    mesh.updateMatrixWorld();
+    mesh.updateMatrixWorld(true);
 
     // raio no centro exato da tela
     const ndc = new Vector2(0, 0);
@@ -52,8 +52,8 @@ describe("pickPanel", () => {
     const behind = makePanel({ id: "atras",  position: { x: -100, y: -100, z: -100 } });
     const meshFront = createPanelMesh(front);
     const meshBehind = createPanelMesh(behind);
-    meshFront.updateMatrixWorld();
-    meshBehind.updateMatrixWorld();
+    meshFront.updateMatrixWorld(true);
+    meshBehind.updateMatrixWorld(true);
 
     const ndc = new Vector2(0, 0);
     expect(pickPanel(ndc, camera, [meshBehind, meshFront])).toBe("frente");

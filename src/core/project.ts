@@ -1,5 +1,7 @@
 import type { Panel, Project, UUID, UpAxis, Box, Vec3 } from "./types";
 import { panelBox, boxSize } from "./geometry";
+import { afterPanelRemoved } from "./groups";
+import { treeOrderAfterRemovePanel, treeOrderAfterAddPanel } from "./treeOrder";
 
 // ── mutações puras ────────────────────────────────────────────────────────────
 
@@ -7,15 +9,30 @@ export function addPanel(project: Project, panel: Panel): Project {
   return { ...project, panels: [...project.panels, panel] };
 }
 
+/** Peças em grupo: só visibilidade individual; dimensões/fita/posição pelo bloco. */
+export function allowedPanelPatchInGroup(patch: Partial<Panel>): Partial<Panel> {
+  const out: Partial<Panel> = {};
+  if ("visible" in patch) out.visible = patch.visible;
+  return out;
+}
+
 export function updatePanel(project: Project, id: UUID, patch: Partial<Panel>): Project {
+  const panel = project.panels.find(p => p.id === id);
+  if (!panel) return project;
+  const effective = panel.groupId ? allowedPanelPatchInGroup(patch) : patch;
+  if (!Object.keys(effective).length) return project;
   return {
     ...project,
-    panels: project.panels.map(p => p.id === id ? { ...p, ...patch } : p),
+    panels: project.panels.map(p => p.id === id ? { ...p, ...effective } : p),
   };
 }
 
 export function removePanel(project: Project, id: UUID): Project {
-  return { ...project, panels: project.panels.filter(p => p.id !== id) };
+  const next = treeOrderAfterRemovePanel(
+    { ...project, panels: project.panels.filter(p => p.id !== id) },
+    id,
+  );
+  return afterPanelRemoved(next, id);
 }
 
 // ── duplicatePanel ────────────────────────────────────────────────────────────
@@ -31,7 +48,7 @@ export function nextCopyName(name: string): string {
 
 export function duplicatePanel(project: Project, id: UUID): Project {
   const src = project.panels.find(p => p.id === id);
-  if (!src) return project;
+  if (!src || src.groupId) return project;
   const box = panelBox(src);
   const extentX = box.max.x - box.min.x;
   const copy: Panel = {
@@ -41,7 +58,10 @@ export function duplicatePanel(project: Project, id: UUID): Project {
     edges: { ...src.edges },
     position: { ...src.position, x: src.position.x + extentX + DUP_GAP },
   };
-  return { ...project, panels: [...project.panels, copy] };
+  return treeOrderAfterAddPanel(
+    { ...project, panels: [...project.panels, copy] },
+    copy.id,
+  );
 }
 
 // ── rotate90 ──────────────────────────────────────────────────────────────────
@@ -50,7 +70,7 @@ const UP_CYCLE: Record<UpAxis, UpAxis> = { y: "x", x: "z", z: "y" };
 
 export function rotate90(project: Project, id: UUID): Project {
   const src = project.panels.find(p => p.id === id);
-  if (!src) return project;
+  if (!src || src.groupId) return project;
 
   const before = boxSize(panelBox(src));
   const center: Vec3 = {
@@ -92,5 +112,7 @@ export function importProject(text: string): Project {
     p.type ??= "";
   }
   raw.appVersion ??= "0.1.0";
+  raw.groups ??= [];
+  raw.treeOrder ??= [];
   return raw as Project;
 }

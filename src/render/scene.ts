@@ -3,23 +3,25 @@ import {
   AmbientLight, DirectionalLight, Color,
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { setupViewportNavigation } from "./viewportNavigation";
 
 export type SceneHandle = {
   renderer: WebGLRenderer;
   scene: Scene;
   camera: PerspectiveCamera;
   controls: OrbitControls;
+  isSpacePanActive: () => boolean;
   invalidate(): void;
   dispose(): void;
 };
 
 export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   const renderer = new WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(devicePixelRatio);
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(canvas.clientWidth || 300, canvas.clientHeight || 300, false);
 
   const scene = new Scene();
-  scene.background = new Color(0x1a1a1a);
+  scene.background = new Color(0x171512);
 
   const camera = new PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 1, 100_000);
   camera.position.set(0, 800, 2000);
@@ -31,7 +33,9 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   scene.add(sun);
 
   const controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = true;
+  controls.enableDamping = false;
+
+  const navigation = setupViewportNavigation(canvas, controls);
 
   let dirty = false;
 
@@ -51,9 +55,10 @@ export function createScene(canvas: HTMLCanvasElement): SceneHandle {
   controls.addEventListener("change", invalidate);
 
   function dispose() {
+    navigation.dispose();
     controls.dispose();
     renderer.dispose();
   }
 
-  return { renderer, scene, camera, controls, invalidate, dispose };
+  return { renderer, scene, camera, controls, isSpacePanActive: navigation.isSpacePanActive, invalidate, dispose };
 }

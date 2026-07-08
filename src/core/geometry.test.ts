@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { panelBox, boxSize } from "./geometry";
+import { panelBox, boxSize, panelLocalPointToWorld } from "./geometry";
 import { collides, findCollisions, COLLISION_TOLERANCE } from "./collision";
 import type { Panel, UpAxis } from "./types";
 
@@ -27,9 +27,9 @@ describe("panelBox nos tres upAxis", () => {
     expect(boxSize(b)).toEqual({ x: 720, y: 560, z: 18 });
   });
 
-  it("x: troca X e Y, espessura fica em Z", () => {
+  it("x: lateral, espessura em X, altura em Y, largura em Z", () => {
     const b = panelBox(makePanel({ ...dims, upAxis: "x" }));
-    expect(boxSize(b)).toEqual({ x: 560, y: 720, z: 18 });
+    expect(boxSize(b)).toEqual({ x: 18, y: 560, z: 720 });
   });
 
   it("z: deitado, espessura vira altura em Y", () => {
@@ -41,6 +41,13 @@ describe("panelBox nos tres upAxis", () => {
     const b = panelBox(makePanel({ ...dims, position: { x: 100, y: 200, z: 300 } }));
     expect(b.min).toEqual({ x: 100, y: 200, z: 300 });
     expect(b.max).toEqual({ x: 820, y: 760, z: 318 });
+  });
+
+  it("local max corner bate com panelBox max (upAxis x)", () => {
+    const p = makePanel({ ...dims, upAxis: "x" });
+    const b = panelBox(p);
+    const corner = panelLocalPointToWorld(p, 720, 560, 18);
+    expect(corner).toEqual(b.max);
   });
 });
 

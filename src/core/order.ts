@@ -1,12 +1,17 @@
 import type { Project, EdgeSide } from "./types";
 import { groupPieces, areaByThicknessM2 } from "./pieces";
 
-function edgeLabels(e: Record<EdgeSide, boolean>): string {
-  const map: Record<EdgeSide, string> = {
-    top: "Superior", bottom: "Inferior", left: "Esquerda", right: "Direita",
-  };
-  const on = (Object.keys(map) as EdgeSide[]).filter(k => e[k]).map(k => map[k]);
-  return on.length ? on.join(", ") : "sem fita";
+const EDGE_SHORT: Record<EdgeSide, string> = {
+  top: "Sup", bottom: "Inf", left: "Esq", right: "Dir",
+};
+
+function edgeShort(e: Record<EdgeSide, boolean>): string {
+  const on = (Object.keys(EDGE_SHORT) as EdgeSide[]).filter(k => e[k]).map(k => EDGE_SHORT[k]);
+  return on.length ? on.join(" ") : "-";
+}
+
+function formatItemLine(qty: number, width: number, height: number, edges: Record<EdgeSide, boolean>): string {
+  return `${qty}x ${width}x${height} | ${edgeShort(edges)}`;
 }
 
 export function buildWhatsappOrder(project: Project): string {
@@ -19,26 +24,24 @@ export function buildWhatsappOrder(project: Project): string {
   }
 
   const area = areaByThicknessM2(project.panels);
-  const lines: string[] = [];
-  lines.push("Bom dia. Orcamento para corte e fita:");
-  lines.push("");
-
   const base = project.settings.defaultMaterial.replace(/\s*\d+\s*mm\s*$/i, "").trimEnd();
   const thicknesses = [...byThickness.keys()].sort((a, b) => a - b);
 
+  const blocks: string[] = ["Olá! Corte e fita:"];
+
   for (const t of thicknesses) {
-    lines.push(`${base} ${t} mm`);
-    for (const g of byThickness.get(t)!) {
-      lines.push(`${g.qty}x ${g.width} x ${g.height} mm`);
-      lines.push(`Fita: ${edgeLabels(g.edges)}`);
-      lines.push(`(${g.names.join("; ")})`);
-    }
-    lines.push(`Area ${t} mm: ${(area.get(t) ?? 0).toFixed(2)} m2`);
-    lines.push("");
+    const items = byThickness.get(t)!;
+    const itemLines = items.map(g => formatItemLine(g.qty, g.width, g.height, g.edges));
+    blocks.push(`${base} ${t} mm\n${itemLines.join("\n")}`);
   }
 
-  lines.push(`Total: ${project.panels.length} pecas`);
-  return lines.join("\n");
+  const areaTotal = thicknesses.length === 1
+    ? `${(area.get(thicknesses[0]) ?? 0).toFixed(2)} m2`
+    : thicknesses.map(t => `${t}mm: ${(area.get(t) ?? 0).toFixed(2)} m2`).join(", ");
+  blocks.push(`${areaTotal}, ${project.panels.length} pecas`);
+
+  // CRLF: WhatsApp preserva quebras melhor que LF sozinho
+  return blocks.join("\n\n").replace(/\n/g, "\r\n");
 }
 
 export function buildCsv(project: Project): string {

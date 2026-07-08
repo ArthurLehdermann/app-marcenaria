@@ -68,4 +68,24 @@ describe("createPropertiesPanel", () => {
     (el.querySelector("[data-action='rotate']") as HTMLElement).click();
     expect(onRotate).toHaveBeenCalledWith("rot-id");
   });
+
+  it("peca em grupo mostra cabecalho de bloco e oculta campos editaveis", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(el, { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() });
+    pp.update(makePanel({ groupId: "g1" }));
+    expect(el.querySelector("[data-group-locked]")).not.toBeNull();
+    expect(el.querySelector(".props-group-header")).not.toBeNull();
+    expect(el.querySelector("[name='width']")).toBeNull();
+    expect(el.querySelector("[name='edge_top']")).toBeNull();
+  });
+
+  it("syncPosition atualiza xyz sem reconstruir formulario", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(el, { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() });
+    pp.update(makePanel({ position: { x: 10, y: 20, z: 30 } }));
+    pp.syncPosition({ x: 100, y: 200, z: 300 });
+    expect(el.querySelector<HTMLInputElement>("[name='pos_x']")?.value).toBe("100");
+    expect(el.querySelector<HTMLInputElement>("[name='pos_y']")?.value).toBe("200");
+    expect(el.querySelector<HTMLInputElement>("[name='pos_z']")?.value).toBe("300");
+  });
 });

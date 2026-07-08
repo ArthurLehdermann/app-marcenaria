@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Mesh } from "three";
-import { createPanelMesh, updateMeshTransform } from "./panelMesh";
+import { Group, Mesh } from "three";
+import { createPanelMesh, updatePanelMesh, getPanelBody } from "./panelMesh";
 import { panelBox, boxSize } from "../core/geometry";
 import type { Panel } from "../core/types";
 
@@ -14,102 +14,108 @@ function makePanel(over: Partial<Panel> = {}): Panel {
     thickness: over.thickness ?? 18,
     position: over.position ?? { x: 0, y: 0, z: 0 },
     upAxis: over.upAxis ?? "y",
-    edges: { top: false, bottom: false, left: false, right: false },
+    edges: over.edges ?? { top: false, bottom: false, left: false, right: false },
     color: over.color ?? "#aabbcc",
     visible: true,
   };
 }
 
 describe("createPanelMesh", () => {
-  it("retorna um Mesh", () => {
-    const mesh = createPanelMesh(makePanel());
-    expect(mesh).toBeInstanceOf(Mesh);
+  it("retorna um Group com corpo e panelId", () => {
+    const group = createPanelMesh(makePanel());
+    expect(group).toBeInstanceOf(Group);
+    expect(group.userData.panelId).toBe("p1");
+    expect(getPanelBody(group)).toBeInstanceOf(Mesh);
   });
 
-  it("geometria tem dimensoes do bounding box (upAxis y)", () => {
+  it("geometria do corpo tem dimensoes do bounding box (upAxis y)", () => {
     const panel = makePanel({ width: 720, height: 560, thickness: 18, upAxis: "y" });
     const size = boxSize(panelBox(panel));
-    const mesh = createPanelMesh(panel);
-    const geo = mesh.geometry as any;
-    expect(geo.parameters.width).toBe(size.x);   // 720
-    expect(geo.parameters.height).toBe(size.y);  // 560
-    expect(geo.parameters.depth).toBe(size.z);   // 18
+    const body = getPanelBody(createPanelMesh(panel));
+    const geo = body.geometry as any;
+    expect(geo.parameters.width).toBe(size.x);
+    expect(geo.parameters.height).toBe(size.y);
+    expect(geo.parameters.depth).toBe(size.z);
   });
 
-  it("geometria tem dimensoes do bounding box (upAxis x, girado)", () => {
+  it("geometria do corpo tem dimensoes do bounding box (upAxis x, girado)", () => {
     const panel = makePanel({ width: 720, height: 560, thickness: 18, upAxis: "x" });
     const size = boxSize(panelBox(panel));
-    const mesh = createPanelMesh(panel);
-    const geo = mesh.geometry as any;
-    expect(geo.parameters.width).toBe(size.x);   // 560
-    expect(geo.parameters.height).toBe(size.y);  // 720
-    expect(geo.parameters.depth).toBe(size.z);   // 18
+    const body = getPanelBody(createPanelMesh(panel));
+    const geo = body.geometry as any;
+    expect(geo.parameters.width).toBe(size.x);
+    expect(geo.parameters.height).toBe(size.y);
+    expect(geo.parameters.depth).toBe(size.z);
   });
 
-  it("posicao do mesh e o centro do bounding box", () => {
+  it("posicao do grupo e o centro do bounding box", () => {
     const panel = makePanel({ position: { x: 100, y: 200, z: 300 } });
     const box = panelBox(panel);
-    const mesh = createPanelMesh(panel);
-    expect(mesh.position.x).toBeCloseTo((box.min.x + box.max.x) / 2);
-    expect(mesh.position.y).toBeCloseTo((box.min.y + box.max.y) / 2);
-    expect(mesh.position.z).toBeCloseTo((box.min.z + box.max.z) / 2);
-  });
-
-  it("userData.panelId guarda o id do painel", () => {
-    const mesh = createPanelMesh(makePanel({ id: "abc-123" }));
-    expect(mesh.userData.panelId).toBe("abc-123");
+    const group = createPanelMesh(panel);
+    expect(group.position.x).toBeCloseTo((box.min.x + box.max.x) / 2);
+    expect(group.position.y).toBeCloseTo((box.min.y + box.max.y) / 2);
+    expect(group.position.z).toBeCloseTo((box.min.z + box.max.z) / 2);
+    expect(getPanelBody(group).position.x).toBeCloseTo(0);
   });
 
   it("mesma cor reutiliza o mesmo material (cache)", () => {
-    const a = createPanelMesh(makePanel({ id: "a", color: "#ff0000" }));
-    const b = createPanelMesh(makePanel({ id: "b", color: "#ff0000" }));
+    const a = getPanelBody(createPanelMesh(makePanel({ id: "a", color: "#ff0000" })));
+    const b = getPanelBody(createPanelMesh(makePanel({ id: "b", color: "#ff0000" })));
     expect(a.material).toBe(b.material);
   });
 
   it("cores diferentes geram materiais diferentes", () => {
-    const a = createPanelMesh(makePanel({ id: "a", color: "#ff0000" }));
-    const b = createPanelMesh(makePanel({ id: "b", color: "#00ff00" }));
+    const a = getPanelBody(createPanelMesh(makePanel({ id: "a", color: "#ff0000" })));
+    const b = getPanelBody(createPanelMesh(makePanel({ id: "b", color: "#00ff00" })));
     expect(a.material).not.toBe(b.material);
   });
 
-  it("mesmas dimensoes reutilizam a mesma geometria (cache)", () => {
-    const a = createPanelMesh(makePanel({ id: "a", width: 600, height: 400, thickness: 15, upAxis: "y" }));
-    const b = createPanelMesh(makePanel({ id: "b", width: 600, height: 400, thickness: 15, upAxis: "y" }));
-    expect(a.geometry).toBe(b.geometry);
+  it("cria faixa de fita so nos lados marcados", () => {
+    const group = createPanelMesh(makePanel({
+      edges: { top: true, bottom: false, left: true, right: false },
+    }));
+    expect(group.getObjectByName("edge-top")).toBeTruthy();
+    expect(group.getObjectByName("edge-left")).toBeTruthy();
+    expect(group.getObjectByName("edge-bottom")).toBeFalsy();
+    expect(group.getObjectByName("edge-right")).toBeFalsy();
   });
 });
 
-describe("updateMeshTransform", () => {
-  it("atualiza posicao sem recriar o mesh", () => {
+describe("updatePanelMesh", () => {
+  it("atualiza posicao sem recriar o grupo", () => {
     const panel = makePanel({ position: { x: 0, y: 0, z: 0 } });
-    const mesh = createPanelMesh(panel);
-    const ref = mesh;
+    const group = createPanelMesh(panel);
+    const ref = group;
 
     const moved = { ...panel, position: { x: 500, y: 0, z: 0 } };
-    updateMeshTransform(mesh, moved);
+    updatePanelMesh(group, moved);
 
-    expect(mesh).toBe(ref); // mesmo objeto
+    expect(group).toBe(ref);
     const box = panelBox(moved);
-    expect(mesh.position.x).toBeCloseTo((box.min.x + box.max.x) / 2);
+    expect(group.position.x).toBeCloseTo((box.min.x + box.max.x) / 2);
   });
 
   it("troca geometria quando dimensoes mudam", () => {
     const panel = makePanel({ width: 720, height: 560, thickness: 18 });
-    const mesh = createPanelMesh(panel);
-    const geoBefore = mesh.geometry;
+    const group = createPanelMesh(panel);
+    const geoBefore = getPanelBody(group).geometry;
 
-    const resized = { ...panel, width: 900 };
-    updateMeshTransform(mesh, resized);
+    updatePanelMesh(group, { ...panel, width: 900 });
 
-    expect(mesh.geometry).not.toBe(geoBefore);
-    expect((mesh.geometry as any).parameters.width).toBe(900);
+    const body = getPanelBody(group);
+    expect(body.geometry).not.toBe(geoBefore);
+    expect((body.geometry as any).parameters.width).toBe(900);
   });
 
-  it("mantem geometria quando dimensoes nao mudam", () => {
-    const panel = makePanel();
-    const mesh = createPanelMesh(panel);
-    const geoBefore = mesh.geometry;
-    updateMeshTransform(mesh, { ...panel, position: { x: 10, y: 0, z: 0 } });
-    expect(mesh.geometry).toBe(geoBefore);
+  it("adiciona e remove faixas quando edges mudam", () => {
+    const panel = makePanel({ edges: { top: false, bottom: false, left: false, right: false } });
+    const group = createPanelMesh(panel);
+    expect(group.getObjectByName("edge-top")).toBeFalsy();
+
+    updatePanelMesh(group, { ...panel, edges: { top: true, bottom: false, left: false, right: false } });
+    expect(group.getObjectByName("edge-top")).toBeTruthy();
+
+    updatePanelMesh(group, { ...panel, edges: { top: false, bottom: false, left: false, right: false } });
+    expect(group.getObjectByName("edge-top")).toBeFalsy();
   });
 });

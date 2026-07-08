@@ -1,21 +1,36 @@
 import { createScene } from "./render/scene";
-import { createPanelMesh, updateMeshTransform } from "./render/panelMesh";
+import { createPanelMesh, updatePanelMesh, getPanelBody } from "./render/panelMesh";
 import { applyHighlight } from "./render/highlight";
 import { pickPanel } from "./render/picking";
 import { findCollisions } from "./core/collision";
-import { exportProject, importProject, addPanel, updatePanel, removePanel, duplicatePanel, rotate90 } from "./core/project";
-import { buildWhatsappOrder, buildCsv } from "./core/order";
+import { panelBox } from "./core/geometry";
+import {
+  exportProject, importProject, addPanel, updatePanel, removePanel,
+  duplicatePanel, rotate90,
+} from "./core/project";
+import {
+  expandSelectionToGroups, createPanelGroup, ungroup, duplicateGroup,
+  removeGroup, rotateGroup90, renameGroup, setGroupCenter, setGroupVisibility,
+  nextGroupName, panelsInGroup, translatePanels, groupBBoxCenter,
+} from "./core/groups";
+import { reorderTopLevel, treeOrderAfterAddPanel } from "./core/treeOrder";
+import { setupSelectionDrag } from "./render/selectionDrag";
+import { setupMobileMoveToggle } from "./ui/mobileMoveToggle";
+import { buildWhatsappOrder } from "./core/order";
 import { createPanelTree } from "./ui/tree";
 import { createPropertiesPanel } from "./ui/properties";
+import { createGroupPropertiesPanel } from "./ui/groupProperties";
+import { createMultiSelectPanel } from "./ui/multiSelectPanel";
 import { createPiecesPanel } from "./ui/piecesPanel";
 import { createProblemsPanel } from "./ui/problemsPanel";
 import { createToolbar } from "./ui/toolbar";
-import { createEditorState, selectPanel, hoverPanel } from "./editorState";
+import {
+  createEditorState, clickSelect, setSelection, clearSelection,
+  toggleGroupPickMode, primarySelectedId,
+} from "./editorState";
 import type { Project, Panel, UUID } from "./core/types";
 import { Vector2 } from "three";
-import type { Mesh } from "three";
-
-// ── estado ────────────────────────────────────────────────────────────────────
+import type { Group } from "three";
 
 function newProject(): Project {
   return {
@@ -23,6 +38,7 @@ function newProject(): Project {
     name: "Sem título",
     settings: { defaultMaterial: "MDF 18 mm", defaultThickness: 18 },
     panels: [],
+    groups: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     appVersion: "0.1.0",
@@ -33,63 +49,269 @@ function newProject(): Project {
 let project: Project = newProject();
 let edState = createEditorState();
 
-// ── render ────────────────────────────────────────────────────────────────────
-
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-const { scene, camera, invalidate, renderer } = createScene(canvas);
+const { scene, camera, controls, invalidate, renderer, isSpacePanActive } = createScene(canvas);
+const meshMap = new Map<UUID, Group>();
 
-const meshMap = new Map<UUID, Mesh>();
+const selectionDrag = setupSelectionDrag({
+  canvas,
+  camera,
+  controls,
+  isSpacePanActive,
+  getSelectedPanelIds: () => expandedSelection(),
+  getAnchorPoint: (ids) => {
+    const panels = ids
+      .map(id => project.panels.find(p => p.id === id))
+      .filter((p): p is Panel => Boolean(p));
+    return groupBBoxCenter(panels);
+  },
+  onTranslate: (ids, delta) => {
+    project = translatePanels(project, ids, delta);
+    syncMeshes();
+    refreshPositionFields();
+  },
+  onDragEnd: () => refreshUI(),
+});
 
-function syncMeshes() {
-  const ids = new Set(project.panels.map(p => p.id));
+const mobileMoveToggle = setupMobileMoveToggle(
+  document.getElementById("btn-mobile-move") as HTMLButtonElement,
+  {
+    isActive: () => selectionDrag.isTouchMoveMode(),
+    toggle: () => selectionDrag.toggleTouchMoveMode(),
+    canUse: () => selectionDrag.canTouchMove(),
+  },
+);
 
-  // remove meshes de paineis deletados
-  for (const [id, mesh] of meshMap) {
-    if (!ids.has(id)) {
-      scene.remove(mesh);
-      meshMap.delete(id);
-    }
+function expandedSelection(): UUID[] {
+  return expandSelectionToGroups(project, edState.selectedPanelIds);
+}
+
+function activeGroupId(): UUID | null {
+  const ids = expandedSelection();
+  if (!ids.length) return null;
+  const gids = new Set(
+    ids.map(id => project.panels.find(p => p.id === id)?.groupId).filter(Boolean) as UUID[],
+  );
+  if (gids.size === 1) return [...gids][0];
+  return null;
+}
+
+function canCreateGroup(): boolean {
+  if (edState.selectedPanelIds.length < 2) return false;
+  const inGroup = edState.selectedPanelIds.filter(id => project.panels.find(p => p.id === id)?.groupId);
+  return inGroup.length === 0;
+}
+
+function fitToContent() {
+  if (!project.panels.length) return;
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (const p of project.panels) {
+    const b = panelBox(p);
+    minX = Math.min(minX, b.min.x); maxX = Math.max(maxX, b.max.x);
+    minY = Math.min(minY, b.min.y); maxY = Math.max(maxY, b.max.y);
+    minZ = Math.min(minZ, b.min.z); maxZ = Math.max(maxZ, b.max.z);
   }
-
-  const collisions = findCollisions(project.panels);
-  const collisionIds = new Set(collisions.flatMap(c => [c.a, c.b]));
-
-  for (const panel of project.panels) {
-    let mesh = meshMap.get(panel.id);
-    if (!mesh) {
-      mesh = createPanelMesh(panel);
-      meshMap.set(panel.id, mesh);
-      scene.add(mesh);
-    } else {
-      updateMeshTransform(mesh, panel);
-    }
-
-    const state = collisionIds.has(panel.id) ? "collision"
-      : panel.id === edState.selectedPanelId ? "selected"
-      : "normal";
-    applyHighlight(mesh, state, panel.color);
-    mesh.visible = panel.visible;
-  }
-
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const cz = (minZ + maxZ) / 2;
+  const size = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 200);
+  controls.target.set(cx, cy, cz);
+  camera.position.set(cx, cy + size * 0.4, cz + size * 1.8);
+  camera.updateProjectionMatrix();
+  controls.update();
   invalidate();
 }
 
-// ── ui ────────────────────────────────────────────────────────────────────────
+function syncMeshes() {
+  const ids = new Set(project.panels.map(p => p.id));
+  for (const [id, mesh] of meshMap) {
+    if (!ids.has(id)) { scene.remove(mesh); meshMap.delete(id); }
+  }
+  const collisions = findCollisions(project.panels);
+  const collisionIds = new Set(collisions.flatMap(c => [c.a, c.b]));
+  const selected = new Set(expandedSelection());
 
-const treeEl        = document.getElementById("panel-tree")!;
-const propsEl       = document.getElementById("properties")!;
-const piecesEl      = document.getElementById("pieces-panel")!;
-const problemsEl    = document.getElementById("problems-panel")!;
-const toolbarEl     = document.getElementById("toolbar")!;
+  for (const panel of project.panels) {
+    let group = meshMap.get(panel.id);
+    if (!group) {
+      group = createPanelMesh(panel);
+      meshMap.set(panel.id, group);
+      scene.add(group);
+    } else {
+      updatePanelMesh(group, panel);
+    }
+    const state = collisionIds.has(panel.id) ? "collision"
+      : selected.has(panel.id) ? "selected"
+      : "normal";
+    applyHighlight(getPanelBody(group), state, panel.color);
+    group.visible = panel.visible;
+  }
+  invalidate();
+}
+
+const hint = document.getElementById("viewport-hint")!;
+
+function handleSelect(id: UUID, additive: boolean) {
+  const useAdditive = additive || edState.groupPickMode;
+  if (useAdditive) {
+    edState = clickSelect(edState, id, true);
+  } else {
+    const panel = project.panels.find(p => p.id === id);
+    if (panel?.groupId) {
+      const members = panelsInGroup(project, panel.groupId).map(p => p.id);
+      edState = setSelection(edState, members);
+    } else {
+      edState = setSelection(edState, [id]);
+    }
+  }
+  refreshUI();
+  syncMeshes();
+  if (!useAdditive) openMobileProps();
+}
+
+function handleSelectGroup(groupId: UUID) {
+  const members = panelsInGroup(project, groupId).map(p => p.id);
+  edState = setSelection(edState, members);
+  refreshUI();
+  syncMeshes();
+  openMobileProps();
+}
+
+function doGroup(name?: string) {
+  const ids = edState.selectedPanelIds.filter(id => !project.panels.find(p => p.id === id)?.groupId);
+  if (ids.length < 2) return;
+  const groupName = name?.trim() || nextGroupName(project);
+  const next = createPanelGroup(project, ids, groupName);
+  const newGroup = next.groups.find(g => !project.groups.some(og => og.id === g.id));
+  mutate(next);
+  if (newGroup) {
+    edState = setSelection(
+      { ...edState, groupPickMode: false },
+      panelsInGroup(project, newGroup.id).map(p => p.id),
+    );
+  } else {
+    edState = { ...edState, groupPickMode: false };
+  }
+  toolbarHandle.setGroupPickActive(false);
+}
+
+const panelCallbacks = {
+  onSelect: handleSelect,
+  onSelectGroup: handleSelectGroup,
+  onVisibilityToggle: (id: UUID, visible: boolean) => mutate(updatePanel(project, id, { visible })),
+  onGroupVisibilityToggle: (gid: UUID, visible: boolean) => mutate(setGroupVisibility(project, gid, visible)),
+  onReorderTopLevel: (activeId: UUID, overId: UUID, place: "before" | "after") =>
+    mutate(reorderTopLevel(project, activeId, overId, place)),
+};
+
+const propsCallbacks = {
+  onChange: (id: UUID, patch: Partial<Panel>) => mutate(updatePanel(project, id, patch)),
+  onDuplicate: (id: UUID) => mutate(duplicatePanel(project, id)),
+  onDelete: (id: UUID) => {
+    edState = clearSelection(edState);
+    closeMobileProps();
+    mutate(removePanel(project, id));
+  },
+  onRotate: (id: UUID) => mutate(rotate90(project, id)),
+};
+
+const groupPropsCallbacks = {
+  onRename: (gid: UUID, name: string) => mutate(renameGroup(project, gid, name)),
+  onMoveCenter: (gid: UUID, x: number, y: number, z: number) =>
+    mutate(setGroupCenter(project, gid, { x, y, z })),
+  onDuplicate: (gid: UUID) => mutate(duplicateGroup(project, gid)),
+  onRotate: (gid: UUID) => mutate(rotateGroup90(project, gid)),
+  onUngroup: (gid: UUID) => {
+    mutate(ungroup(project, gid));
+    edState = clearSelection(edState);
+  },
+  onDelete: (gid: UUID) => {
+    if (!confirm("Excluir todas as peças deste grupo?")) return;
+    edState = clearSelection(edState);
+    closeMobileProps();
+    mutate(removeGroup(project, gid));
+  },
+  onToggleVisibility: (gid: UUID, visible: boolean) =>
+    mutate(setGroupVisibility(project, gid, visible)),
+};
+
+const treeD = createPanelTree(document.getElementById("panel-tree")!, panelCallbacks);
+const treeM = createPanelTree(document.getElementById("m-panel-tree")!, panelCallbacks);
+const propsD = createPropertiesPanel(document.getElementById("properties")!, propsCallbacks);
+const propsM = createPropertiesPanel(document.getElementById("m-properties")!, propsCallbacks);
+const groupPropsD = createGroupPropertiesPanel(document.getElementById("properties")!, groupPropsCallbacks);
+const groupPropsM = createGroupPropertiesPanel(document.getElementById("m-properties")!, groupPropsCallbacks);
+const multiD = createMultiSelectPanel(document.getElementById("properties")!, {
+  onGroup: name => doGroup(name),
+  onClear: () => { edState = clearSelection(edState); refreshUI(); syncMeshes(); },
+});
+const multiM = createMultiSelectPanel(document.getElementById("m-properties")!, {
+  onGroup: name => doGroup(name),
+  onClear: () => { edState = clearSelection(edState); refreshUI(); syncMeshes(); },
+});
+const piecesD = createPiecesPanel(document.getElementById("pieces-panel")!);
+const piecesM = createPiecesPanel(document.getElementById("m-pieces-panel")!);
+const problemsD = createProblemsPanel(document.getElementById("problems-panel")!);
+const problemsM = createProblemsPanel(document.getElementById("m-problems-panel")!);
+
+function refreshPositionFields() {
+  const gid = activeGroupId();
+  if (gid) {
+    const center = groupBBoxCenter(panelsInGroup(project, gid));
+    groupPropsD.syncPosition(center);
+    groupPropsM.syncPosition(center);
+    return;
+  }
+  if (edState.selectedPanelIds.length !== 1) return;
+  const p = project.panels.find(x => x.id === edState.selectedPanelIds[0]);
+  if (!p || p.groupId) return;
+  propsD.syncPosition(p.position);
+  propsM.syncPosition(p.position);
+}
 
 function refreshUI() {
   const collisions = findCollisions(project.panels);
   const collisionIds = new Set(collisions.flatMap(c => [c.a, c.b]));
+  const gid = activeGroupId();
 
-  tree.update(project.panels, edState.selectedPanelId, collisionIds);
-  props.update(project.panels.find(p => p.id === edState.selectedPanelId) ?? null);
-  pieces.update(project.panels);
-  problems.update(collisions, project.panels);
+  treeD.update(project, edState.selectedPanelIds, collisionIds, edState.groupPickMode);
+  treeM.update(project, edState.selectedPanelIds, collisionIds, edState.groupPickMode);
+
+  propsD.update(null);
+  propsM.update(null);
+  groupPropsD.update(project, null);
+  groupPropsM.update(project, null);
+  multiD.update(0);
+  multiM.update(0);
+
+  if (gid) {
+    groupPropsD.update(project, gid);
+    groupPropsM.update(project, gid);
+  } else if (edState.selectedPanelIds.length === 1) {
+    const p = project.panels.find(x => x.id === edState.selectedPanelIds[0]) ?? null;
+    if (p?.groupId) {
+      groupPropsD.update(project, p.groupId);
+      groupPropsM.update(project, p.groupId);
+    } else {
+      propsD.update(p);
+      propsM.update(p);
+    }
+  } else if (edState.selectedPanelIds.length >= 2) {
+    multiD.update(edState.selectedPanelIds.length);
+    multiM.update(edState.selectedPanelIds.length);
+  }
+
+  toolbarHandle.setGroupPickActive(edState.groupPickMode);
+  toolbarHandle.setCanGroup(canCreateGroup());
+
+  piecesD.update(project.panels);
+  piecesM.update(project.panels);
+  problemsD.update(collisions, project.panels);
+  problemsM.update(collisions, project.panels);
+  hint.classList.toggle("hidden", project.panels.length > 0);
+  selectionDrag.notifySelectionChange();
+  mobileMoveToggle.sync();
 }
 
 function mutate(next: Project) {
@@ -98,29 +320,7 @@ function mutate(next: Project) {
   refreshUI();
 }
 
-const tree = createPanelTree(treeEl, {
-  onSelect: (id) => {
-    edState = selectPanel(edState, id);
-    refreshUI();
-    syncMeshes();
-  },
-  onVisibilityToggle: (id, visible) => mutate(updatePanel(project, id, { visible })),
-});
-
-const props = createPropertiesPanel(propsEl, {
-  onChange: (id, patch) => mutate(updatePanel(project, id, patch)),
-  onDuplicate: (id) => mutate(duplicatePanel(project, id)),
-  onDelete: (id) => {
-    edState = selectPanel(edState, undefined);
-    mutate(removePanel(project, id));
-  },
-  onRotate: (id) => mutate(rotate90(project, id)),
-});
-
-const pieces = createPiecesPanel(piecesEl);
-const problems = createProblemsPanel(problemsEl);
-
-createToolbar(toolbarEl, {
+const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
   onNew: () => {
     if (!confirm("Criar novo projeto? O projeto atual será perdido.")) return;
     edState = createEditorState();
@@ -128,18 +328,14 @@ createToolbar(toolbarEl, {
   },
   onOpen: () => {
     const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
+    input.type = "file"; input.accept = ".json";
     input.addEventListener("change", async () => {
-      const file = input.files?.[0];
-      if (!file) return;
+      const file = input.files?.[0]; if (!file) return;
       try {
-        const text = await file.text();
         edState = createEditorState();
-        mutate(importProject(text));
-      } catch (e) {
-        alert(`Erro ao abrir: ${(e as Error).message}`);
-      }
+        mutate(importProject(await file.text()));
+        fitToContent();
+      } catch (e) { alert(`Erro ao abrir: ${(e as Error).message}`); }
     });
     input.click();
   },
@@ -147,64 +343,98 @@ createToolbar(toolbarEl, {
     const blob = exportProject(project);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `${project.name}.json`;
-    a.click();
+    a.href = url; a.download = `${project.name}.json`; a.click();
     URL.revokeObjectURL(url);
   },
   onExport: () => {
-    const text = buildWhatsappOrder(project);
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsappOrder(project))}`, "_blank");
+  },
+  onToggleGroupPick: () => {
+    edState = toggleGroupPickMode(edState);
+    refreshUI();
+  },
+  onGroupSelected: () => {
+    const name = prompt("Nome do grupo:", nextGroupName(project));
+    if (name === null) return;
+    doGroup(name);
   },
 });
 
-// ── picking por clique ────────────────────────────────────────────────────────
+function addNewPanel() {
+  const panel: Panel = {
+    id: crypto.randomUUID(), type: "", name: "Painel",
+    width: 400, height: 600,
+    thickness: project.settings.defaultThickness,
+    position: { x: 0, y: 0, z: 0 },
+    upAxis: "y",
+    edges: { top: false, bottom: false, left: false, right: false },
+    color: "#ffffff",
+    visible: true,
+  };
+  mutate(treeOrderAfterAddPanel(addPanel(project, panel), panel.id));
+  fitToContent();
+}
+
+document.getElementById("btn-add-panel")?.addEventListener("click", addNewPanel);
+document.getElementById("fab")?.addEventListener("click", addNewPanel);
+document.getElementById("viewport-hint")?.addEventListener("click", addNewPanel);
 
 canvas.addEventListener("click", (e) => {
+  if (isSpacePanActive() || selectionDrag.consumeClick()) return;
   const rect = canvas.getBoundingClientRect();
   const ndc = new Vector2(
     ((e.clientX - rect.left) / rect.width) * 2 - 1,
     -((e.clientY - rect.top) / rect.height) * 2 + 1,
   );
-  const meshes = [...meshMap.values()];
-  const id = pickPanel(ndc, camera, meshes);
-  edState = selectPanel(edState, id ?? undefined);
-  refreshUI();
-  syncMeshes();
+  const id = pickPanel(ndc, camera, [...meshMap.values()]);
+  if (!id) {
+    edState = clearSelection(edState);
+    refreshUI(); syncMeshes();
+    return;
+  }
+  handleSelect(id, e.shiftKey);
 });
 
-// ── botao adicionar painel ────────────────────────────────────────────────────
-
-document.getElementById("btn-add-panel")?.addEventListener("click", () => {
-  const panel: Panel = {
-    id: crypto.randomUUID(),
-    type: "",
-    name: "Painel",
-    width: 400,
-    height: 600,
-    thickness: project.settings.defaultThickness,
-    position: { x: 0, y: 0, z: 0 },
-    upAxis: "y",
-    edges: { top: false, bottom: false, left: false, right: false },
-    color: "#" + Math.floor(Math.random() * 0xaaaaaa + 0x333333).toString(16).padStart(6, "0"),
-    visible: true,
-  };
-  mutate(addPanel(project, panel));
+document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const pane = btn.dataset.pane!;
+    document.querySelectorAll(".mnav-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll<HTMLElement>(".mpane").forEach(p => p.classList.add("hidden"));
+    document.getElementById(`m-pane-${pane}`)?.classList.remove("hidden");
+  });
 });
 
-// ── resize ────────────────────────────────────────────────────────────────────
+const mPropsSheet = document.getElementById("m-props-sheet")!;
+const mPropsOverlay = document.getElementById("m-props-overlay")!;
 
-window.addEventListener("resize", () => {
+function openMobileProps() {
+  if (!primarySelectedId(edState)) return;
+  mPropsSheet.classList.add("open");
+  mPropsOverlay.classList.add("open");
+}
+function closeMobileProps() {
+  mPropsSheet.classList.remove("open");
+  mPropsOverlay.classList.remove("open");
+}
+
+document.getElementById("btn-close-props")?.addEventListener("click", closeMobileProps);
+mPropsOverlay.addEventListener("click", closeMobileProps);
+
+function onResize() {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
+  if (!w || !h) return;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
+  renderer.setSize(w, h, false);
   invalidate();
+}
+
+window.addEventListener("resize", onResize);
+
+requestAnimationFrame(() => {
+  onResize();
+  syncMeshes();
+  refreshUI();
 });
-
-// ── init ──────────────────────────────────────────────────────────────────────
-
-syncMeshes();
-refreshUI();
