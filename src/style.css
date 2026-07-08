@@ -256,10 +256,86 @@ html, body {
   z-index: 31;
   transform: translateY(100%);
   transition: transform .26s cubic-bezier(.4,0,.2,1);
-  max-height: 82vh; overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 #m-props-sheet.open { transform: translateY(0); }
+#m-properties {
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+#m-properties [data-panel-form][data-layout="tabs"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+#m-properties .props-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+#m-properties .props-tab-bar {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+#m-properties .props-tab-btn {
+  flex: 1;
+  padding: 10px 6px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--muted);
+  font: 600 12px var(--font-ui);
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+#m-properties .props-tab-btn.active {
+  color: var(--accent-hi);
+  border-bottom-color: var(--accent);
+}
+#m-properties .props-tab-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#m-properties .props-tab-pane { padding: 12px; }
+#m-properties .props-tab-hint {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+#m-properties .props-dim-grid,
+#m-properties .props-pos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 10px;
+}
+#m-properties .props-dim-grid label:last-child,
+#m-properties .props-pos-grid label:last-child {
+  grid-column: 1 / -1;
+}
+#m-properties .props-dim-grid label,
+#m-properties .props-pos-grid label {
+  margin-bottom: 8px;
+}
+#m-properties [data-panel-form] .actions {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
 #m-props-drag {
   width: 36px; height: 4px; background: var(--border-2);
   border-radius: 2px; margin: 10px auto 0;
@@ -423,7 +499,10 @@ html, body {
 .ei-t.on,.ei-b.on,.ei-l.on,.ei-r.on { background: var(--accent); }
 
 /* ── properties form ─────────────────────────────────────────────────────── */
-#properties, #m-properties { padding: 12px; }
+#properties { padding: 12px; }
+#m-properties:not(:empty) { padding: 0; }
+
+.props-dim-stack label { margin-bottom: 10px; }
 
 [data-panel-form],
 [data-group-form],

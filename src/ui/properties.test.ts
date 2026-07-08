@@ -88,4 +88,33 @@ describe("createPropertiesPanel", () => {
     expect(el.querySelector<HTMLInputElement>("[name='pos_y']")?.value).toBe("200");
     expect(el.querySelector<HTMLInputElement>("[name='pos_z']")?.value).toBe("300");
   });
+
+  it("layout tabs agrupa campos em abas", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(
+      el,
+      { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() },
+      { layout: "tabs" },
+    );
+    pp.update(makePanel());
+    expect(el.querySelector(".props-tab-bar")).not.toBeNull();
+    expect(el.querySelectorAll(".props-tab-btn")).toHaveLength(3);
+    expect(el.querySelector("[data-tab-pane='general'] [name='name']")).not.toBeNull();
+    expect(el.querySelector("[data-tab-pane='position'] [name='pos_x']")).not.toBeNull();
+    expect(el.querySelector("[data-tab-pane='edge'] [name='edge_top']")).not.toBeNull();
+    expect(el.querySelector<HTMLElement>("[data-tab-pane='position']")?.hidden).toBe(true);
+  });
+
+  it("layout tabs alterna paineis ao clicar na aba", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(
+      el,
+      { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() },
+      { layout: "tabs" },
+    );
+    pp.update(makePanel());
+    (el.querySelector("[data-tab='position']") as HTMLElement).click();
+    expect(el.querySelector<HTMLElement>("[data-tab-pane='position']")?.hidden).toBe(false);
+    expect(el.querySelector<HTMLElement>("[data-tab-pane='general']")?.hidden).toBe(true);
+  });
 });

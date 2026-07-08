@@ -7,7 +7,19 @@ export type PropertiesCallbacks = {
   onRotate(id: UUID): void;
 };
 
-export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCallbacks) {
+export type PropertiesPanelOptions = {
+  layout?: "stack" | "tabs";
+};
+
+type TabId = "general" | "position" | "edge";
+
+export function createPropertiesPanel(
+  container: HTMLElement,
+  cbs: PropertiesCallbacks,
+  options: PropertiesPanelOptions = {},
+) {
+  const layout = options.layout ?? "stack";
+
   function update(panel: Panel | null) {
     container.innerHTML = "";
     if (!panel) return;
@@ -17,6 +29,7 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
     const form = document.createElement("div");
     form.dataset.panelForm = "";
     if (inGroup) form.dataset.groupLocked = "";
+    if (layout === "tabs") form.dataset.layout = "tabs";
 
     if (inGroup) {
       const note = document.createElement("div");
@@ -32,7 +45,21 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
       return;
     }
 
-    function field(label: string, name: string, value: string, type = "text") {
+    const targets = layout === "tabs"
+      ? {
+          general: document.createElement("div"),
+          position: document.createElement("div"),
+          edge: document.createElement("div"),
+        }
+      : { form };
+
+    function appendField(
+      target: HTMLElement,
+      label: string,
+      name: string,
+      value: string,
+      type = "text",
+    ) {
       const wrap = document.createElement("label");
       wrap.textContent = label + " ";
       const input = document.createElement("input");
@@ -53,30 +80,50 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
         cbs.onChange(p.id, patch);
       });
       wrap.appendChild(input);
-      form.appendChild(wrap);
+      target.appendChild(wrap);
     }
 
-    function sectionLabel(text: string) {
+    function sectionLabel(target: HTMLElement, text: string) {
       const el = document.createElement("div");
       el.className = "props-section";
       el.textContent = text;
-      form.appendChild(el);
+      target.appendChild(el);
     }
 
-    field("Nome", "name", p.name);
-    field("Tipo", "type", p.type);
-    field("Largura", "width", String(p.width), "number");
-    field("Altura", "height", String(p.height), "number");
-    field("Espessura", "thickness", String(p.thickness), "number");
-    field("Cor", "color", p.color, "color");
+    const generalTarget = targets.general ?? form;
+    const positionTarget = targets.position ?? form;
+    const edgeTarget = targets.edge ?? form;
 
-    sectionLabel("Posição (mm)");
-    field("X", "pos_x", String(Math.round(p.position.x)), "number");
-    field("Y", "pos_y", String(Math.round(p.position.y)), "number");
-    field("Z", "pos_z", String(Math.round(p.position.z)), "number");
+    appendField(generalTarget, "Nome", "name", p.name);
+    appendField(generalTarget, "Tipo", "type", p.type);
 
-    // fita
-    sectionLabel("Fita de borda");
+    const dimGrid = document.createElement("div");
+    dimGrid.className = layout === "tabs" ? "props-dim-grid" : "props-dim-stack";
+    generalTarget.appendChild(dimGrid);
+    appendField(dimGrid, "Largura", "width", String(p.width), "number");
+    appendField(dimGrid, "Altura", "height", String(p.height), "number");
+    appendField(dimGrid, "Espessura", "thickness", String(p.thickness), "number");
+    appendField(generalTarget, "Cor", "color", p.color, "color");
+
+    if (layout === "stack") {
+      sectionLabel(positionTarget, "Posição (mm)");
+    }
+    const posGrid = document.createElement("div");
+    posGrid.className = layout === "tabs" ? "props-pos-grid" : "props-dim-stack";
+    positionTarget.appendChild(posGrid);
+    appendField(posGrid, "X", "pos_x", String(Math.round(p.position.x)), "number");
+    appendField(posGrid, "Y", "pos_y", String(Math.round(p.position.y)), "number");
+    appendField(posGrid, "Z", "pos_z", String(Math.round(p.position.z)), "number");
+
+    if (layout === "stack") {
+      sectionLabel(edgeTarget, "Fita de borda");
+    } else {
+      const edgeHint = document.createElement("p");
+      edgeHint.className = "props-tab-hint";
+      edgeHint.textContent = "Marque os lados que recebem fita de borda.";
+      edgeTarget.appendChild(edgeHint);
+    }
+
     const edgeRow = document.createElement("div");
     edgeRow.className = "edge-row";
     const edgeSides: EdgeSide[] = ["top", "bottom", "left", "right"];
@@ -94,9 +141,8 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
       label.appendChild(cb);
       edgeRow.appendChild(label);
     }
-    form.appendChild(edgeRow);
+    edgeTarget.appendChild(edgeRow);
 
-    // ações
     const actionsEl = document.createElement("div");
     actionsEl.className = "actions";
     const axisLabel: Record<string, string> = { y: "em pé →Z", x: "lateral →X", z: "deitado →Y" };
@@ -113,7 +159,62 @@ export function createPropertiesPanel(container: HTMLElement, cbs: PropertiesCal
       btn.addEventListener("click", fn);
       actionsEl.appendChild(btn);
     }
-    form.appendChild(actionsEl);
+    generalTarget.appendChild(actionsEl);
+
+    if (layout === "tabs") {
+      const tabs = document.createElement("div");
+      tabs.className = "props-tabs";
+      tabs.dataset.activeTab = "general";
+
+      const tabBar = document.createElement("div");
+      tabBar.className = "props-tab-bar";
+      tabBar.setAttribute("role", "tablist");
+
+      const tabBody = document.createElement("div");
+      tabBody.className = "props-tab-body";
+
+      const tabDefs: Array<[TabId, string]> = [
+        ["general", "Geral"],
+        ["position", "Posição"],
+        ["edge", "Borda"],
+      ];
+
+      for (const [id, label] of tabDefs) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "props-tab-btn";
+        btn.dataset.tab = id;
+        btn.setAttribute("role", "tab");
+        btn.setAttribute("aria-selected", id === "general" ? "true" : "false");
+        btn.textContent = label;
+        tabBar.appendChild(btn);
+
+        const pane = targets[id]!;
+        pane.className = "props-tab-pane";
+        pane.dataset.tabPane = id;
+        if (id !== "general") pane.hidden = true;
+        tabBody.appendChild(pane);
+      }
+
+      tabBar.addEventListener("click", (e) => {
+        const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".props-tab-btn");
+        if (!btn) return;
+        const id = btn.dataset.tab as TabId;
+        tabs.dataset.activeTab = id;
+        tabBar.querySelectorAll(".props-tab-btn").forEach(b => {
+          b.classList.toggle("active", b === btn);
+          b.setAttribute("aria-selected", String(b === btn));
+        });
+        tabBody.querySelectorAll<HTMLElement>(".props-tab-pane").forEach(pane => {
+          const active = pane.dataset.tabPane === id;
+          pane.hidden = !active;
+        });
+      });
+      tabBar.querySelector(".props-tab-btn")?.classList.add("active");
+
+      tabs.append(tabBar, tabBody);
+      form.appendChild(tabs);
+    }
 
     container.appendChild(form);
   }
