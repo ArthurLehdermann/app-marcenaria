@@ -1,5 +1,5 @@
 import type { Project, UUID } from "../core/types";
-import { groupBBoxCenter, panelsInGroup } from "../core/groups";
+import { groupBBox, panelsInGroup } from "../core/groups";
 
 export type GroupPropertiesCallbacks = {
   onRename(groupId: UUID, name: string): void;
@@ -19,7 +19,9 @@ export function createGroupPropertiesPanel(container: HTMLElement, cbs: GroupPro
     const members = panelsInGroup(project, groupId);
     if (!group || members.length < 2) return;
 
-    const center = groupBBoxCenter(members);
+    const box = groupBBox(members);
+    if (!box) return;
+    const origin = box.min;
     const allVisible = members.every(p => p.visible);
 
     const form = document.createElement("div");
@@ -71,16 +73,20 @@ export function createGroupPropertiesPanel(container: HTMLElement, cbs: GroupPro
 
     appendField(form, "Nome", "name", group.name, "text", v => cbs.onRename(groupId, v));
 
-    sectionLabel("Centro do bloco (mm)");
+    sectionLabel("Posição do bloco (mm)");
+    const posHint = document.createElement("p");
+    posHint.className = "props-tab-hint";
+    posHint.textContent = "Canto inferior traseiro esquerdo do bloco inteiro (não de uma peça só).";
+    form.appendChild(posHint);
     const posGrid = document.createElement("div");
     posGrid.className = "props-size-grid";
     form.appendChild(posGrid);
-    appendField(posGrid, "X", "pos_x", String(Math.round(center.x)), "number", v =>
-      cbs.onMoveCenter(groupId, Number(v), center.y, center.z));
-    appendField(posGrid, "Y", "pos_y", String(Math.round(center.y)), "number", v =>
-      cbs.onMoveCenter(groupId, center.x, Number(v), center.z));
-    appendField(posGrid, "Z", "pos_z", String(Math.round(center.z)), "number", v =>
-      cbs.onMoveCenter(groupId, center.x, center.y, Number(v)));
+    appendField(posGrid, "X", "pos_x", String(Math.round(origin.x)), "number", v =>
+      cbs.onMoveCenter(groupId, Number(v), origin.y, origin.z));
+    appendField(posGrid, "Y", "pos_y", String(Math.round(origin.y)), "number", v =>
+      cbs.onMoveCenter(groupId, origin.x, Number(v), origin.z));
+    appendField(posGrid, "Z", "pos_z", String(Math.round(origin.z)), "number", v =>
+      cbs.onMoveCenter(groupId, origin.x, origin.y, Number(v)));
 
     const visLabel = document.createElement("label");
     visLabel.className = "props-check";

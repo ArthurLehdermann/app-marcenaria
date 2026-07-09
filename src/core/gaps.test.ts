@@ -67,6 +67,17 @@ describe("gaps com peças avulsas", () => {
     const gaps = gapsForDisplay(proj, ["p1"]);
     expect(gaps.some(g => g.toId === "p3")).toBe(false);
   });
+
+  it("mostra cota acima de 500 mm até o objeto visível mais próximo", () => {
+    const far = panel({ id: "far", position: { x: 2000, y: 0, z: 0 } });
+    const near = panel({ id: "near", position: { x: 0, y: 0, z: 0 } });
+    const selected = panel({ id: "sel", position: { x: 1000, y: 0, z: 0 } });
+    const gaps = gapsForDisplay(project([near, selected, far]), ["sel"]);
+    const left = gaps.find(g => g.toId === "near");
+    const right = gaps.find(g => g.toId === "far");
+    expect(left?.distance).toBeCloseTo(600, 1);
+    expect(right?.distance).toBeCloseTo(600, 1);
+  });
 });
 
 describe("gaps com grupos", () => {

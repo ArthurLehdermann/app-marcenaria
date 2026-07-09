@@ -1,5 +1,5 @@
 import type { Panel, Project, UUID, UpAxis, Box, Vec3 } from "./types";
-import { panelBox, boxSize } from "./geometry";
+import { panelBox, boxSize, panelsUnionBox } from "./geometry";
 import { afterPanelRemoved } from "./groups";
 import { treeOrderAfterRemovePanel, treeOrderAfterAddPanel } from "./treeOrder";
 
@@ -38,7 +38,25 @@ export function removePanel(project: Project, id: UUID): Project {
 
 // ── duplicatePanel ────────────────────────────────────────────────────────────
 
-const DUP_GAP = 32;
+export const PANEL_PLACEMENT_GAP_MM = 32;
+
+const DUP_GAP = PANEL_PLACEMENT_GAP_MM;
+
+/**
+ * Posição inicial de peça nova: à esquerda do desenho (union de todas as peças),
+ * alinhada na base (Y) e na face traseira (Z).
+ * Referência = canto inferior traseiro esquerdo, igual às peças soltas.
+ */
+export function positionForNewPanel(project: Project, panel: Panel): Vec3 {
+  const layout = panelsUnionBox(project.panels);
+  if (!layout) return { x: 0, y: 0, z: 0 };
+  const extent = boxSize(panelBox(panel));
+  return {
+    x: layout.min.x - PANEL_PLACEMENT_GAP_MM - extent.x,
+    y: layout.min.y,
+    z: layout.min.z,
+  };
+}
 
 export function nextCopyName(name: string): string {
   const m = name.match(/^(.*?) \(copia(?: (\d+))?\)$/);

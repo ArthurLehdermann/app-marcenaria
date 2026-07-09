@@ -1,13 +1,13 @@
 import { findCollisions } from "../core/collision";
 import { createScene } from "../render/scene";
 import { createGapDimensionsLayer } from "../render/gapDimensions";
-import { cloneProject, exportProject, importProject, addPanel, updatePanel, removePanel, duplicatePanel, rotate90 } from "../core/project";
+import { cloneProject, exportProject, importProject, addPanel, updatePanel, removePanel, duplicatePanel, rotate90, positionForNewPanel } from "../core/project";
 import { saveProjectLocal, loadProjectLocal, clearProjectLocal } from "../core/projectStorage";
 import { createProjectHistory } from "../core/history";
 import {
   createPanelGroup, ungroup, duplicateGroup, removeGroup, rotateGroup90,
-  renameGroup, setGroupCenter, setGroupVisibility, nextGroupName, panelsInGroup,
-  translatePanels, groupBBoxCenter,
+  renameGroup, setGroupOrigin, setGroupVisibility, nextGroupName, panelsInGroup,
+  translatePanels, groupBBoxCenter, groupBBox,
 } from "../core/groups";
 import { reorderTopLevel, treeOrderAfterAddPanel } from "../core/treeOrder";
 import { snapDragDelta } from "../core/snap";
@@ -82,9 +82,11 @@ export function createApp() {
   function refreshPositionFields() {
     const gid = activeGroupId(project, edState.selectedPanelIds);
     if (gid) {
-      const center = groupBBoxCenter(panelsInGroup(project, gid));
-      groupPropsD.syncPosition(center);
-      groupPropsM.syncPosition(center);
+      const box = groupBBox(panelsInGroup(project, gid));
+      if (box) {
+        groupPropsD.syncPosition(box.min);
+        groupPropsM.syncPosition(box.min);
+      }
       return;
     }
     if (edState.selectedPanelIds.length !== 1) return;
@@ -254,7 +256,7 @@ export function createApp() {
   const groupPropsCallbacks = {
     onRename: (gid: UUID, name: string) => mutate(renameGroup(project, gid, name)),
     onMoveCenter: (gid: UUID, x: number, y: number, z: number) =>
-      mutate(setGroupCenter(project, gid, { x, y, z })),
+      mutate(setGroupOrigin(project, gid, { x, y, z })),
     onDuplicate: (gid: UUID) => mutate(duplicateGroup(project, gid)),
     onRotate: (gid: UUID) => mutate(rotateGroup90(project, gid)),
     onUngroup: (gid: UUID) => {
@@ -418,6 +420,7 @@ export function createApp() {
       color: "#ffffff",
       visible: true,
     };
+    panel.position = positionForNewPanel(project, panel);
     mutate(treeOrderAfterAddPanel(addPanel(project, panel), panel.id));
     fitToContent();
   }

@@ -1,5 +1,5 @@
-import type { Panel, PanelGroup, Project, UUID, Vec3 } from "./types";
-import { panelBox, boxSize } from "./geometry";
+import type { Panel, PanelGroup, Project, UUID, Vec3, Box } from "./types";
+import { panelBox, boxSize, panelsUnionBox } from "./geometry";
 import { rotate90, nextCopyName } from "./project";
 import {
   treeOrderAfterCreateGroup,
@@ -32,6 +32,10 @@ export function expandSelectionToGroups(project: Project, ids: UUID[]): UUID[] {
     }
   }
   return [...out];
+}
+
+export function groupBBox(panels: Panel[]): Box | null {
+  return panelsUnionBox(panels);
 }
 
 export function groupBBoxCenter(panels: Panel[]): Vec3 {
@@ -109,6 +113,18 @@ export function translatePanels(project: Project, panelIds: UUID[], delta: Vec3)
       };
     }),
   };
+}
+
+export function setGroupOrigin(project: Project, groupId: UUID, targetMin: Vec3): Project {
+  const members = panelsInGroup(project, groupId);
+  if (!members.length) return project;
+  const box = panelsUnionBox(members);
+  if (!box) return project;
+  return translatePanels(project, members.map(p => p.id), {
+    x: targetMin.x - box.min.x,
+    y: targetMin.y - box.min.y,
+    z: targetMin.z - box.min.z,
+  });
 }
 
 export function setGroupCenter(project: Project, groupId: UUID, target: Vec3): Project {

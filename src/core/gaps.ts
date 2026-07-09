@@ -3,7 +3,6 @@ import { panelBox, panelsUnionBox } from "./geometry";
 import { panelsInGroup, expandSelectionToGroups } from "./groups";
 import { COLLISION_TOLERANCE, collides } from "./collision";
 
-export const MAX_GAP_DISPLAY_MM = 500;
 export const MIN_OVERLAP_FOR_GAP_MM = 1;
 
 const AXES = ["x", "y", "z"] as const;
@@ -198,7 +197,7 @@ function gapBetweenEntities(from: GapEntity, to: GapEntity): PanelGap | null {
   if (!boxesAlignedForGap(from.box, to.box)) return null;
 
   const { a, b, distance } = closestPointsBetweenBoxes(from.box, to.box);
-  if (distance <= COLLISION_TOLERANCE || distance > MAX_GAP_DISPLAY_MM) return null;
+  if (distance <= COLLISION_TOLERANCE) return null;
 
   const direction = gapDirection(a, b);
   if (!direction) return null;

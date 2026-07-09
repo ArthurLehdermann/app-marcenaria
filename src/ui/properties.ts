@@ -235,6 +235,12 @@ export function createPropertiesPanel(
     appendField(posGrid, "X", "pos_x", String(Math.round(p.position.x)), "number");
     appendField(posGrid, "Y", "pos_y", String(Math.round(p.position.y)), "number");
     appendField(posGrid, "Z", "pos_z", String(Math.round(p.position.z)), "number");
+    if (!inGroup) {
+      const posHint = document.createElement("p");
+      posHint.className = "props-tab-hint";
+      posHint.textContent = "Canto inferior traseiro esquerdo da peça, em mm no projeto.";
+      positionTarget.appendChild(posHint);
+    }
 
     appendEdgeFields(edgeTarget);
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   createPanelGroup, ungroup, expandSelectionToGroups, duplicateGroup,
-  panelsInGroup, setGroupCenter, groupBBoxCenter,
+  panelsInGroup, setGroupCenter, setGroupOrigin, groupBBox, groupBBoxCenter,
 } from "./groups";
 import type { Panel, Project } from "./types";
 
@@ -62,6 +62,18 @@ describe("setGroupCenter", () => {
     expect(after.x - before.x).toBeCloseTo(100);
     const da = next.panels.find(x => x.id === "a")!.position.x;
     expect(da).toBeCloseTo(100);
+  });
+});
+
+describe("setGroupOrigin", () => {
+  it("alinha o canto min do bloco ao alvo", () => {
+    const a = makePanel({ id: "a", groupId: "g1", position: { x: 100, y: 50, z: 10 } });
+    const b = makePanel({ id: "b", groupId: "g1", position: { x: 600, y: 50, z: 10 } });
+    const p = makeProject([a, b], [{ id: "g1", name: "Balcão" }]);
+    const next = setGroupOrigin(p, "g1", { x: 0, y: 0, z: 0 });
+    const box = groupBBox(panelsInGroup(next, "g1"));
+    expect(box?.min).toEqual({ x: 0, y: 0, z: 0 });
+    expect(next.panels.find(x => x.id === "a")!.position.x).toBeCloseTo(0);
   });
 });
 

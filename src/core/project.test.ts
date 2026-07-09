@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   addPanel, updatePanel, removePanel,
-  duplicatePanel, rotate90,
+  duplicatePanel, rotate90, positionForNewPanel,
   exportProject, importProject, allowedPanelPatchInGroup,
 } from "./project";
 import { panelBox, boxSize } from "./geometry";
@@ -51,6 +51,24 @@ describe("addPanel", () => {
     const orig = makeProject();
     addPanel(orig, makePanel());
     expect(orig.panels).toHaveLength(0);
+  });
+});
+
+describe("positionForNewPanel", () => {
+  it("primeira peca comeca na origem", () => {
+    const panel = makePanel({ width: 400, height: 600, thickness: 18 });
+    expect(positionForNewPanel(makeProject(), panel)).toEqual({ x: 0, y: 0, z: 0 });
+  });
+
+  it("peca nova fica a esquerda do desenho existente (union do grupo)", () => {
+    const a = makePanel({ id: "a", groupId: "g1", position: { x: 0, y: 0, z: 0 }, width: 400 });
+    const b = makePanel({ id: "b", groupId: "g1", position: { x: 500, y: 0, z: 0 }, width: 400 });
+    const proj = makeProject([a, b], [{ id: "g1", name: "Balcão" }]);
+    const novo = makePanel({ id: "n", width: 400, height: 600, thickness: 18 });
+    const pos = positionForNewPanel(proj, novo);
+    expect(pos.x).toBeCloseTo(-432); // 0 - 32 - 400
+    expect(pos.y).toBe(0);
+    expect(pos.z).toBe(0);
   });
 });
 
