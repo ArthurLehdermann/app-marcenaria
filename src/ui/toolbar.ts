@@ -9,14 +9,20 @@ export type ToolbarCallbacks = {
   onOpen(): void;
   onSave(): void;
   onExport(): void;
+  onUndo(): void;
+  onRedo(): void;
   onToggleGroupPick(): void;
+  onToggleSnap(): void;
   onGroupSelected(): void;
 };
 
 export type ToolbarHandle = {
   setGroupPickActive(active: boolean): void;
+  setSnapActive(active: boolean): void;
   setCanGroup(can: boolean): void;
   setCanNew(can: boolean): void;
+  setCanUndo(can: boolean): void;
+  setCanRedo(can: boolean): void;
 };
 
 export function createToolbar(
@@ -51,6 +57,8 @@ export function createToolbar(
     ["open",   "Abrir",    cbs.onOpen],
     ["save",   "Salvar",   cbs.onSave],
     ["export", "Exportar", cbs.onExport],
+    ["undo",   "Desfazer", cbs.onUndo],
+    ["redo",   "Refazer",  cbs.onRedo],
   ];
   const actionButtons = new Map<string, HTMLButtonElement>();
   for (const [action, label, fn] of buttons) {
@@ -63,6 +71,8 @@ export function createToolbar(
   }
   const newBtn = actionButtons.get("new")!;
   newBtn.disabled = true;
+  actionButtons.get("undo")!.disabled = true;
+  actionButtons.get("redo")!.disabled = true;
 
   const sep = document.createElement("span");
   sep.className = "toolbar-sep";
@@ -75,6 +85,13 @@ export function createToolbar(
   pickBtn.addEventListener("click", run(cbs.onToggleGroupPick));
   container.appendChild(pickBtn);
 
+  const snapBtn = document.createElement("button");
+  snapBtn.dataset.action = "snap";
+  snapBtn.textContent = "Magnetizar";
+  snapBtn.title = "Colar peças face a face ao arrastar";
+  snapBtn.addEventListener("click", run(cbs.onToggleSnap));
+  container.appendChild(snapBtn);
+
   const groupBtn = document.createElement("button");
   groupBtn.dataset.action = "group";
   groupBtn.textContent = "Agrupar";
@@ -86,11 +103,21 @@ export function createToolbar(
     setGroupPickActive(active: boolean) {
       pickBtn.classList.toggle("active", active);
     },
+    setSnapActive(active: boolean) {
+      snapBtn.classList.toggle("active", active);
+      snapBtn.setAttribute("aria-pressed", String(active));
+    },
     setCanGroup(can: boolean) {
       groupBtn.disabled = !can;
     },
     setCanNew(can: boolean) {
       newBtn.disabled = !can;
+    },
+    setCanUndo(can: boolean) {
+      actionButtons.get("undo")!.disabled = !can;
+    },
+    setCanRedo(can: boolean) {
+      actionButtons.get("redo")!.disabled = !can;
     },
   };
 }

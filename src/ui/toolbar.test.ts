@@ -8,7 +8,10 @@ function mockCbs(over: Partial<Parameters<typeof createToolbar>[1]> = {}) {
     onOpen: vi.fn(),
     onSave: vi.fn(),
     onExport: vi.fn(),
+    onUndo: vi.fn(),
+    onRedo: vi.fn(),
     onToggleGroupPick: vi.fn(),
+    onToggleSnap: vi.fn(),
     onGroupSelected: vi.fn(),
     ...over,
   };
@@ -23,6 +26,7 @@ describe("createToolbar", () => {
     expect(el.querySelector("[data-action='save']")).not.toBeNull();
     expect(el.querySelector("[data-action='export']")).not.toBeNull();
     expect(el.querySelector("[data-action='group-pick']")).not.toBeNull();
+    expect(el.querySelector("[data-action='snap']")).not.toBeNull();
     expect(el.querySelector("[data-action='group']")).not.toBeNull();
   });
 
@@ -95,5 +99,21 @@ describe("createToolbar", () => {
     toggle.click();
     (toolbarEl.querySelector("[data-action='save']") as HTMLElement).click();
     expect(wrap.classList.contains("open")).toBe(false);
+  });
+
+  it("renderiza desfazer e refazer", () => {
+    const el = document.createElement("div");
+    createToolbar(el, mockCbs());
+    expect(el.querySelector("[data-action='undo']")).not.toBeNull();
+    expect(el.querySelector("[data-action='redo']")).not.toBeNull();
+  });
+
+  it("clicar em desfazer chama onUndo", () => {
+    const onUndo = vi.fn();
+    const el = document.createElement("div");
+    const toolbar = createToolbar(el, mockCbs({ onUndo }));
+    toolbar.setCanUndo(true);
+    (el.querySelector("[data-action='undo']") as HTMLElement).click();
+    expect(onUndo).toHaveBeenCalledOnce();
   });
 });

@@ -26,6 +26,19 @@ export function boxSize(b: Box): Vec3 {
   };
 }
 
+export function panelsUnionBox(panels: Panel[]): Box | null {
+  if (!panels.length) return null;
+  let minX = Infinity, minY = Infinity, minZ = Infinity;
+  let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+  for (const p of panels) {
+    const b = panelBox(p);
+    minX = Math.min(minX, b.min.x); maxX = Math.max(maxX, b.max.x);
+    minY = Math.min(minY, b.min.y); maxY = Math.max(maxY, b.max.y);
+    minZ = Math.min(minZ, b.min.z); maxZ = Math.max(maxZ, b.max.z);
+  }
+  return { min: { x: minX, y: minY, z: minZ }, max: { x: maxX, y: maxY, z: maxZ } };
+}
+
 /** Ponto no espaco local do painel (largura=X, altura=Y, espessura=Z) → mundo. */
 export function panelLocalPointToWorld(p: Panel, lx: Millimeters, ly: Millimeters, lz: Millimeters): Vec3 {
   const { x, y, z } = p.position;

@@ -35,7 +35,14 @@ export function createGroupPropertiesPanel(container: HTMLElement, cbs: GroupPro
       </div>`;
     form.appendChild(header);
 
-    function field(label: string, name: string, value: string, type: string, onChange: (v: string) => void) {
+    function appendField(
+      target: HTMLElement,
+      label: string,
+      name: string,
+      value: string,
+      type: string,
+      onChange: (v: string) => void,
+    ) {
       const wrap = document.createElement("label");
       wrap.textContent = label + " ";
       const input = document.createElement("input");
@@ -52,7 +59,7 @@ export function createGroupPropertiesPanel(container: HTMLElement, cbs: GroupPro
         }
       });
       wrap.appendChild(input);
-      form.appendChild(wrap);
+      target.appendChild(wrap);
     }
 
     function sectionLabel(text: string) {
@@ -62,14 +69,17 @@ export function createGroupPropertiesPanel(container: HTMLElement, cbs: GroupPro
       form.appendChild(el);
     }
 
-    field("Nome", "name", group.name, "text", v => cbs.onRename(groupId, v));
+    appendField(form, "Nome", "name", group.name, "text", v => cbs.onRename(groupId, v));
 
     sectionLabel("Centro do bloco (mm)");
-    field("X", "pos_x", String(Math.round(center.x)), "number", v =>
+    const posGrid = document.createElement("div");
+    posGrid.className = "props-size-grid";
+    form.appendChild(posGrid);
+    appendField(posGrid, "X", "pos_x", String(Math.round(center.x)), "number", v =>
       cbs.onMoveCenter(groupId, Number(v), center.y, center.z));
-    field("Y", "pos_y", String(Math.round(center.y)), "number", v =>
+    appendField(posGrid, "Y", "pos_y", String(Math.round(center.y)), "number", v =>
       cbs.onMoveCenter(groupId, center.x, Number(v), center.z));
-    field("Z", "pos_z", String(Math.round(center.z)), "number", v =>
+    appendField(posGrid, "Z", "pos_z", String(Math.round(center.z)), "number", v =>
       cbs.onMoveCenter(groupId, center.x, center.y, Number(v)));
 
     const visLabel = document.createElement("label");

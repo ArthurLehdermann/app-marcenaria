@@ -92,14 +92,21 @@ export function rotate90(project: Project, id: UUID): Project {
 
 // ── persistência ──────────────────────────────────────────────────────────────
 
+export function cloneProject(project: Project): Project {
+  return JSON.parse(JSON.stringify(project));
+}
+
 export function exportProject(project: Project): Blob {
   const json = JSON.stringify({ ...project, updatedAt: new Date().toISOString() }, null, 2);
   return new Blob([json], { type: "application/json" });
 }
 
+export const CURRENT_SCHEMA_VERSION = 2 as const;
+
 export function importProject(text: string): Project {
   const raw = JSON.parse(text);
-  if (raw.schemaVersion !== 1) throw new Error("Versao de schema incompativel");
+  const version = raw.schemaVersion;
+  if (version !== 1 && version !== 2) throw new Error("Versao de schema incompativel");
   if (!Array.isArray(raw.panels)) throw new Error("Projeto invalido");
   for (const p of raw.panels) {
     if (typeof p.thickness !== "number" || p.thickness <= 0)
@@ -114,5 +121,6 @@ export function importProject(text: string): Project {
   raw.appVersion ??= "0.1.0";
   raw.groups ??= [];
   raw.treeOrder ??= [];
+  raw.schemaVersion = CURRENT_SCHEMA_VERSION;
   return raw as Project;
 }

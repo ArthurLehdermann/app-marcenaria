@@ -1,11 +1,12 @@
 import type { EditorState, UUID } from "./core/types";
 
-export function createEditorState(): EditorState {
+export function createEditorState(snapEnabled = true): EditorState {
   return {
     selectedPanelIds: [],
     hoveredPanelId: undefined,
     showCollisions: true,
     groupPickMode: false,
+    snapEnabled,
     camera: {
       position: { x: 0, y: 800, z: 2000 },
       target: { x: 0, y: 0, z: 0 },
@@ -47,6 +48,10 @@ export function toggleCollisions(state: EditorState): EditorState {
 
 export function toggleGroupPickMode(state: EditorState): EditorState {
   return { ...state, groupPickMode: !state.groupPickMode };
+}
+
+export function toggleSnapEnabled(state: EditorState): EditorState {
+  return { ...state, snapEnabled: !state.snapEnabled };
 }
 
 /** @deprecated */

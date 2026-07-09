@@ -92,6 +92,7 @@ function appendPanelRow(
   item.appendChild(eye);
 
   item.addEventListener("click", (e) => {
+    if (!p.visible) return;
     if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
     if (registerDoubleTap?.(p.id, e.clientX, e.clientY)) return;
     cbs.onSelect(p.id, e.shiftKey);

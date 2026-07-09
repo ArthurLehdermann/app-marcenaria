@@ -1,4 +1,5 @@
 import { createScene } from "./render/scene";
+import { createGapDimensionsLayer } from "./render/gapDimensions";
 import { createPanelMesh, updatePanelMesh, getPanelBody } from "./render/panelMesh";
 import { applyHighlight } from "./render/highlight";
 import { pickPanel } from "./render/picking";
@@ -6,14 +7,17 @@ import { findCollisions } from "./core/collision";
 import { panelBox } from "./core/geometry";
 import {
   exportProject, importProject, addPanel, updatePanel, removePanel,
-  duplicatePanel, rotate90,
+  duplicatePanel, rotate90, cloneProject,
 } from "./core/project";
+import { saveProjectLocal, loadProjectLocal, clearProjectLocal } from "./core/projectStorage";
+import { createProjectHistory } from "./core/history";
 import {
   expandSelectionToGroups, createPanelGroup, ungroup, duplicateGroup,
   removeGroup, rotateGroup90, renameGroup, setGroupCenter, setGroupVisibility,
   nextGroupName, panelsInGroup, translatePanels, groupBBoxCenter,
 } from "./core/groups";
 import { reorderTopLevel, treeOrderAfterAddPanel } from "./core/treeOrder";
+import { snapDragDelta } from "./core/snap";
 import { setupSelectionDrag } from "./render/selectionDrag";
 import { setupMobileMoveToggle } from "./ui/mobileMoveToggle";
 import { buildWhatsappOrder } from "./core/order";
@@ -26,11 +30,13 @@ import { createProblemsPanel } from "./ui/problemsPanel";
 import { createToolbar } from "./ui/toolbar";
 import { createDoubleTapHandler } from "./ui/doubleTap";
 import { setupOnboarding } from "./ui/onboarding";
-import { preventDoubleTapZoom } from "./ui/preventDoubleTapZoom";
+import { setupMobileZoomLock } from "./ui/preventDoubleTapZoom";
+import { setupMobileSplit } from "./ui/mobileSplit";
+import { bindPressFeedback } from "./ui/touchFeedback";
 import { setupProjectNameEdit } from "./ui/projectName";
 import {
   createEditorState, clickSelect, setSelection, clearSelection,
-  toggleGroupPickMode, primarySelectedId,
+  toggleGroupPickMode, toggleSnapEnabled, primarySelectedId,
 } from "./editorState";
 import type { Project, Panel, UUID } from "./core/types";
 import { Vector2 } from "three";
@@ -46,24 +52,42 @@ function newProject(): Project {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     appVersion: "0.1.0",
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
-let project: Project = newProject();
-let edState = createEditorState();
+let project: Project = loadProjectLocal() ?? newProject();
+const history = createProjectHistory();
+const SNAP_PREF_KEY = "marcenaria_snap_v1";
+
+function loadSnapEnabled(): boolean {
+  try {
+    return localStorage.getItem(SNAP_PREF_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function saveSnapEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(SNAP_PREF_KEY, enabled ? "1" : "0");
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+history.init(project);
+let dragUndoSnapshot: Project | null = null;
+let edState = createEditorState(loadSnapEnabled());
 
 const projectNameEl = document.getElementById("project-name") as HTMLButtonElement;
-const projectNameHandle = setupProjectNameEdit(
-  projectNameEl,
-  () => project.name,
-  (name) => { project = { ...project, name, updatedAt: new Date().toISOString() }; },
-);
-
-preventDoubleTapZoom();
-
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+const appEl = document.getElementById("app")!;
+
+setupMobileZoomLock({ root: appEl, canvas });
+
 const { scene, camera, controls, invalidate, renderer, isSpacePanActive } = createScene(canvas);
+const gapDimensions = createGapDimensionsLayer(scene);
 const meshMap = new Map<UUID, Group>();
 
 const selectionDrag = setupSelectionDrag({
@@ -79,11 +103,25 @@ const selectionDrag = setupSelectionDrag({
     return groupBBoxCenter(panels);
   },
   onTranslate: (ids, delta) => {
-    project = translatePanels(project, ids, delta);
+    const snapped = snapDragDelta(project, ids, delta, edState.snapEnabled);
+    project = translatePanels(project, ids, snapped);
     syncMeshes();
     refreshPositionFields();
+    saveProjectLocal(project);
   },
-  onDragEnd: () => refreshUI(),
+  onDragStart: () => {
+    dragUndoSnapshot = cloneProject(project);
+  },
+  onDragEnd: (moved) => {
+    if (moved && dragUndoSnapshot) {
+      history.record(dragUndoSnapshot);
+    }
+    dragUndoSnapshot = null;
+    if (moved) {
+      refreshUI();
+      syncHistoryButtons();
+    }
+  },
 });
 
 const mobileMoveToggle = setupMobileMoveToggle(
@@ -159,13 +197,20 @@ function syncMeshes() {
       : "normal";
     applyHighlight(getPanelBody(group), state, panel.color);
     group.visible = panel.visible;
+    group.traverse(obj => {
+      obj.visible = panel.visible;
+    });
   }
+  gapDimensions.update(project, edState.selectedPanelIds);
   invalidate();
 }
 
 const hint = document.getElementById("viewport-hint")!;
 
 function handleSelect(id: UUID, additive: boolean) {
+  const panel = project.panels.find(p => p.id === id);
+  if (!panel?.visible) return;
+
   const useAdditive = additive || edState.groupPickMode;
   if (useAdditive) {
     edState = clickSelect(edState, id, true);
@@ -269,6 +314,8 @@ const piecesM = createPiecesPanel(document.getElementById("m-pieces-panel")!);
 const problemsD = createProblemsPanel(document.getElementById("problems-panel")!);
 const problemsM = createProblemsPanel(document.getElementById("m-problems-panel")!);
 
+let mobileSplit: ReturnType<typeof setupMobileSplit>;
+
 function refreshPositionFields() {
   const gid = activeGroupId();
   if (gid) {
@@ -319,8 +366,10 @@ function refreshUI() {
   }
 
   toolbarHandle.setGroupPickActive(edState.groupPickMode);
+  toolbarHandle.setSnapActive(edState.snapEnabled);
   toolbarHandle.setCanGroup(canCreateGroup());
   toolbarHandle.setCanNew(project.panels.length > 0);
+  syncHistoryButtons();
 
   piecesD.update(project.panels);
   piecesM.update(project.panels);
@@ -329,19 +378,52 @@ function refreshUI() {
   hint.classList.toggle("hidden", project.panels.length > 0);
   selectionDrag.notifySelectionChange();
   mobileMoveToggle.sync();
+  mobileSplit?.setEnabled(edState.selectedPanelIds.length > 0);
+}
+
+function syncHistoryButtons() {
+  toolbarHandle.setCanUndo(history.canUndo());
+  toolbarHandle.setCanRedo(history.canRedo());
 }
 
 function mutate(next: Project) {
-  project = next;
+  history.record(project);
+  project = { ...next, updatedAt: new Date().toISOString() };
+  saveProjectLocal(project);
   syncMeshes();
   refreshUI();
+}
+
+function applyHistoryState(next: Project) {
+  project = next;
+  saveProjectLocal(project);
+  syncMeshes();
+  refreshUI();
+}
+
+function undo() {
+  const prev = history.undo(project);
+  if (!prev) return;
+  applyHistoryState(prev);
+}
+
+function redo() {
+  const next = history.redo(project);
+  if (!next) return;
+  applyHistoryState(next);
 }
 
 const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
   onNew: () => {
     if (!confirm("Criar novo projeto? O projeto atual será perdido.")) return;
-    edState = createEditorState();
-    mutate(newProject());
+    edState = createEditorState(loadSnapEnabled());
+    const fresh = newProject();
+    clearProjectLocal();
+    history.init(fresh);
+    project = fresh;
+    saveProjectLocal(project);
+    syncMeshes();
+    refreshUI();
   },
   onOpen: () => {
     const input = document.createElement("input");
@@ -349,8 +431,13 @@ const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
     input.addEventListener("change", async () => {
       const file = input.files?.[0]; if (!file) return;
       try {
-        edState = createEditorState();
-        mutate(importProject(await file.text()));
+        const loaded = importProject(await file.text());
+        edState = createEditorState(loadSnapEnabled());
+        history.init(loaded);
+        project = loaded;
+        saveProjectLocal(project);
+        syncMeshes();
+        refreshUI();
         fitToContent();
       } catch (e) { alert(`Erro ao abrir: ${(e as Error).message}`); }
     });
@@ -366,8 +453,15 @@ const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
   onExport: () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(buildWhatsappOrder(project))}`, "_blank");
   },
+  onUndo: undo,
+  onRedo: redo,
   onToggleGroupPick: () => {
     edState = toggleGroupPickMode(edState);
+    refreshUI();
+  },
+  onToggleSnap: () => {
+    edState = toggleSnapEnabled(edState);
+    saveSnapEnabled(edState.snapEnabled);
     refreshUI();
   },
   onGroupSelected: () => {
@@ -380,6 +474,18 @@ const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
   toggle: document.getElementById("btn-toolbar-menu")!,
   overlay: document.getElementById("toolbar-menu-overlay")!,
 });
+
+const projectNameHandle = setupProjectNameEdit(
+  projectNameEl,
+  () => project.name,
+  (name) => {
+    history.record(project);
+    project = { ...project, name, updatedAt: new Date().toISOString() };
+    saveProjectLocal(project);
+    syncHistoryButtons();
+    projectNameHandle.sync();
+  },
+);
 
 function addNewPanel() {
   const panel: Panel = {
@@ -397,8 +503,13 @@ function addNewPanel() {
 }
 
 document.getElementById("btn-add-panel")?.addEventListener("click", addNewPanel);
-document.getElementById("fab")?.addEventListener("click", addNewPanel);
+const fabEl = document.getElementById("fab");
+fabEl?.addEventListener("click", addNewPanel);
+if (fabEl) bindPressFeedback(fabEl);
 document.getElementById("viewport-hint")?.addEventListener("click", addNewPanel);
+
+bindPressFeedback(document.getElementById("mobile-split-handle")!);
+document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(bindPressFeedback);
 
 const canvasDoubleTap = createDoubleTapHandler(() => openMobileProps());
 
@@ -408,7 +519,9 @@ function pickPanelAt(clientX: number, clientY: number): UUID | null {
     ((clientX - rect.left) / rect.width) * 2 - 1,
     -((clientY - rect.top) / rect.height) * 2 + 1,
   );
-  return pickPanel(ndc, camera, [...meshMap.values()]);
+  const id = pickPanel(ndc, camera, [...meshMap.values()]);
+  if (!id) return null;
+  return project.panels.find(p => p.id === id)?.visible ? id : null;
 }
 
 canvas.addEventListener("touchend", (e) => {
@@ -455,10 +568,6 @@ document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(btn => {
 const mPropsSheet = document.getElementById("m-props-sheet")!;
 const mPropsOverlay = document.getElementById("m-props-overlay")!;
 
-function isMobileViewport() {
-  return window.matchMedia("(max-width: 767px)").matches;
-}
-
 function openMobileProps() {
   if (!isMobileViewport() || edState.selectedPanelIds.length === 0) return;
   mPropsSheet.classList.add("open");
@@ -472,8 +581,8 @@ function closeMobileProps() {
 document.getElementById("btn-close-props")?.addEventListener("click", closeMobileProps);
 mPropsOverlay.addEventListener("click", closeMobileProps);
 
-for (const type of ["gesturestart", "gesturechange", "gestureend"] as const) {
-  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 767px)").matches;
 }
 
 function onResize() {
@@ -486,11 +595,39 @@ function onResize() {
   invalidate();
 }
 
-window.addEventListener("resize", onResize);
+mobileSplit = setupMobileSplit({
+  app: document.getElementById("app")!,
+  topbar: document.getElementById("topbar")!,
+  handle: document.getElementById("mobile-split-handle")!,
+  bottom: document.getElementById("mobile-bottom")!,
+  isMobile: isMobileViewport,
+  onLayoutChange: onResize,
+});
+
+window.addEventListener("resize", () => {
+  mobileSplit.sync();
+  onResize();
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.target && (e.target as HTMLElement).closest("input, textarea, select, [contenteditable]")) return;
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+  if (e.key === "z" && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+    e.preventDefault();
+    redo();
+  }
+});
 
 requestAnimationFrame(() => {
-  onResize();
-  syncMeshes();
-  refreshUI();
-  setupOnboarding();
+  requestAnimationFrame(() => {
+    mobileSplit.sync();
+    onResize();
+    syncMeshes();
+    refreshUI();
+    setupOnboarding();
+  });
 });

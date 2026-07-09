@@ -17,7 +17,7 @@ function makePanel(over: Partial<Panel> = {}): Panel {
 function makeProject(panels: Panel[], groups: Project["groups"] = []): Project {
   return {
     id: "p", name: "t", settings: { defaultMaterial: "MDF", defaultThickness: 18 },
-    panels, groups, createdAt: "", updatedAt: "", appVersion: "0.1.0", schemaVersion: 1,
+    panels, groups, createdAt: "", updatedAt: "", appVersion: "0.1.0", schemaVersion: 2,
   };
 }
 

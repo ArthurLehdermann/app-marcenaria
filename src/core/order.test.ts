@@ -27,7 +27,7 @@ function makeProject(panels: Panel[], material = "MDF Ultra 18 mm"): Project {
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     appVersion: "0.1.0",
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 

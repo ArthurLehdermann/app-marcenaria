@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  createEditorState, clickSelect, setSelection, toggleGroupPickMode, primarySelectedId,
+  createEditorState, clickSelect, setSelection, toggleGroupPickMode, toggleSnapEnabled,
+  primarySelectedId,
 } from "./editorState";
 
 describe("clickSelect", () => {
@@ -19,6 +20,13 @@ describe("clickSelect", () => {
 describe("toggleGroupPickMode", () => {
   it("alterna modo", () => {
     expect(toggleGroupPickMode(createEditorState()).groupPickMode).toBe(true);
+  });
+});
+
+describe("toggleSnapEnabled", () => {
+  it("alterna magnetizar", () => {
+    expect(toggleSnapEnabled(createEditorState()).snapEnabled).toBe(false);
+    expect(toggleSnapEnabled(createEditorState(false)).snapEnabled).toBe(true);
   });
 });
 

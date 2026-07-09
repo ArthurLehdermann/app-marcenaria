@@ -57,7 +57,7 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   appVersion: string;
-  schemaVersion: 1;
+  schemaVersion: 2;
 };
 
 // Estado da sessao. Nunca persiste no arquivo do projeto.
@@ -66,5 +66,7 @@ export type EditorState = {
   hoveredPanelId?: UUID;
   showCollisions: boolean;
   groupPickMode: boolean;
+  /** Magnetizar peças ao arrastar (face a face). */
+  snapEnabled: boolean;
   camera: { position: Vec3; target: Vec3 };
 };

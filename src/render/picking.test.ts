@@ -42,6 +42,19 @@ describe("pickPanel", () => {
     expect(pickPanel(ndc, camera, [mesh])).toBe("alvo");
   });
 
+  it("ignora mesh invisivel", () => {
+    const camera = new PerspectiveCamera(45, 1, 0.1, 100_000);
+    camera.position.set(0, 0, 5000);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld();
+
+    const mesh = createPanelMesh(makePanel({ id: "oculto" }));
+    mesh.visible = false;
+    mesh.updateMatrixWorld(true);
+
+    expect(pickPanel(new Vector2(0, 0), camera, [mesh])).toBeNull();
+  });
+
   it("retorna o painel mais proximo quando ha sobreposicao", () => {
     const camera = new PerspectiveCamera(45, 1, 0.1, 100_000);
     camera.position.set(0, 0, 5000);

@@ -21,10 +21,11 @@
       </div>
       <div id="toolbar-wrap">
         <button id="btn-toolbar-menu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="toolbar">
-          <svg class="toolbar-menu-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-            <path class="toolbar-menu-bar toolbar-menu-bar--top" d="M2 5h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path class="toolbar-menu-bar toolbar-menu-bar--mid" d="M2 9h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            <path class="toolbar-menu-bar toolbar-menu-bar--bot" d="M2 13h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <svg class="toolbar-menu-icon toolbar-menu-icon--open" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <svg class="toolbar-menu-icon toolbar-menu-icon--closed" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
         <div id="toolbar"></div>
@@ -55,8 +56,9 @@
       <div id="problems-panel"></div>
     </div>
 
-    <!-- mobile nav -->
-    <nav id="mobile-nav">
+    <div id="mobile-bottom">
+      <button id="mobile-split-handle" type="button" hidden aria-label="Ajustar altura do preview" aria-valuemin="15" aria-valuemax="85" aria-valuenow="70"></button>
+      <nav id="mobile-nav">
       <button class="mnav-btn active" data-pane="tree">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="3.5" rx=".75" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="6.25" width="14" height="3.5" rx=".75" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="11.5" width="9" height="3.5" rx=".75" stroke="currentColor" stroke-width="1.3"/></svg>
         Painéis
@@ -76,8 +78,9 @@
       <div id="m-pane-pieces"   class="mpane hidden"><div id="m-pieces-panel"></div></div>
       <div id="m-pane-problems" class="mpane hidden"><div id="m-problems-panel"></div></div>
     </div>
+    </div>
 
-    <button id="fab">+</button>
+    <button id="fab" type="button" aria-label="Adicionar painel">+</button>
 
     <div id="toolbar-menu-overlay"></div>
 

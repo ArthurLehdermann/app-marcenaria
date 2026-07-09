@@ -1,5 +1,6 @@
-# Deploy:
-#   docker compose -p marcenaria up -d --build
+# Deploy (tag = commit curto; rollback: IMAGE_TAG=<sha-antigo> docker compose ... up -d):
+#   ./scripts/deploy.sh
+#   IMAGE_TAG=$(git rev-parse --short HEAD) docker compose -p marcenaria up -d --build
 #
 # Domínio:
 #   marcenaria.morla.com.br  → app (Vite static)
@@ -11,7 +12,7 @@ networks:
 services:
   web:
     build: .
-    image: ${REGISTRY:-ghcr.io/arthurlehdermann}/app-marcenaria:${IMAGE_TAG:-latest}
+    image: ${REGISTRY:-ghcr.io/arthurlehdermann}/app-marcenaria:${IMAGE_TAG:?defina IMAGE_TAG com o SHA do commit}
     container_name: marcenaria_web
     restart: always
     deploy:
@@ -26,5 +27,5 @@ services:
       - "traefik.http.routers.marcenaria-web.rule=Host(`marcenaria.morla.com.br`)"
       - "traefik.http.routers.marcenaria-web.entrypoints=websecure"
       - "traefik.http.routers.marcenaria-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.marcenaria-web.loadbalancer.server.port=80"
+      - "traefik.http.services.marcenaria-web.loadbalancer.server.port=8080"
       - "traefik.docker.network=traefik_public"

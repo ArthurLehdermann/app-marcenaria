@@ -13,9 +13,16 @@ function panelIdFromObject(obj: Object3D): UUID | null {
 }
 
 export function pickPanel(ndc: Vector2, camera: Camera, roots: Object3D[]): UUID | null {
-  for (const root of roots) root.updateMatrixWorld(true);
+  const visibleRoots = roots.filter(r => r.visible);
+  if (!visibleRoots.length) return null;
+
+  for (const root of visibleRoots) root.updateMatrixWorld(true);
   raycaster.setFromCamera(ndc, camera);
-  const hits = raycaster.intersectObjects(roots, true);
-  if (!hits.length) return null;
-  return panelIdFromObject(hits[0].object);
+  const hits = raycaster.intersectObjects(visibleRoots, true);
+
+  for (const hit of hits) {
+    const id = panelIdFromObject(hit.object);
+    if (id) return id;
+  }
+  return null;
 }

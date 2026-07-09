@@ -33,7 +33,7 @@ function makeProject(panels: Panel[] = []): Project {
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     appVersion: "0.1.0",
-    schemaVersion: 1,
+    schemaVersion: 2,
   };
 }
 
@@ -248,7 +248,7 @@ describe("exportProject", () => {
     expect(blob).toBeInstanceOf(Blob);
     const text = await blob.text();
     const parsed = JSON.parse(text);
-    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed.schemaVersion).toBe(2);
     expect(parsed.panels).toHaveLength(1);
   });
 
@@ -271,8 +271,14 @@ describe("importProject", () => {
     expect(imported.panels).toHaveLength(1);
   });
 
-  it("lanca erro para schemaVersion diferente de 1", () => {
-    const proj = { ...makeProject(), schemaVersion: 2 };
+  it("importa projeto v1 e promove para schema 2", () => {
+    const proj = { ...makeProject([makePanel()]), schemaVersion: 1 };
+    const imported = importProject(JSON.stringify(proj));
+    expect(imported.schemaVersion).toBe(2);
+  });
+
+  it("lanca erro para schemaVersion desconhecida", () => {
+    const proj = { ...makeProject(), schemaVersion: 3 };
     expect(() => importProject(JSON.stringify(proj))).toThrow("schema");
   });
 

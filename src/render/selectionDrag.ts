@@ -14,13 +14,14 @@ export type SelectionDragOptions = {
   getSelectedPanelIds: () => UUID[];
   getAnchorPoint: (panelIds: UUID[]) => Vec3;
   onTranslate: (panelIds: UUID[], delta: Vec3) => void;
-  onDragEnd: () => void;
+  onDragStart?: () => void;
+  onDragEnd: (moved: boolean) => void;
 };
 
 export function setupSelectionDrag(opts: SelectionDragOptions) {
   const {
     canvas, camera, controls, isSpacePanActive,
-    getSelectedPanelIds, getAnchorPoint, onTranslate, onDragEnd,
+    getSelectedPanelIds, getAnchorPoint, onTranslate, onDragStart, onDragEnd,
   } = opts;
 
   let dragging = false;
@@ -82,8 +83,8 @@ export function setupSelectionDrag(opts: SelectionDragOptions) {
     canvas.classList.remove("viewport-dragging");
     if (moved) {
       suppressClick = true;
-      onDragEnd();
     }
+    onDragEnd(moved);
     moved = false;
     updateCursor();
   }
@@ -111,6 +112,7 @@ export function setupSelectionDrag(opts: SelectionDragOptions) {
     canvas.setPointerCapture(e.pointerId);
     canvas.classList.add("viewport-dragging");
     canvas.style.cursor = "move";
+    onDragStart?.();
   }
 
   function onPointerMove(e: PointerEvent) {

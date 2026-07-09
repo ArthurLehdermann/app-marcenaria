@@ -24,7 +24,7 @@ function makeProject(panels: Panel[], groups: Project["groups"] = [], treeOrder?
   return {
     id: "p", name: "t", settings: { defaultMaterial: "MDF", defaultThickness: 18 },
     panels, groups, treeOrder,
-    createdAt: "", updatedAt: "", appVersion: "0.1.0", schemaVersion: 1,
+    createdAt: "", updatedAt: "", appVersion: "0.1.0", schemaVersion: 2,
   };
 }
 
