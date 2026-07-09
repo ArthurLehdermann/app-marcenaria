@@ -6,7 +6,6 @@ import {
   type DropPlace,
 } from "../core/treeOrder";
 import { createEdgeIndicator } from "./edgeIndicator";
-import { createDoubleTapHandler } from "./doubleTap";
 
 export type TreeCallbacks = {
   onSelect(id: UUID, additive: boolean, focusMember?: boolean): void;
@@ -14,7 +13,7 @@ export type TreeCallbacks = {
   onVisibilityToggle(id: UUID, visible: boolean): void;
   onGroupVisibilityToggle(groupId: UUID, visible: boolean): void;
   onReorderTopLevel(activeId: UUID, overId: UUID, place: DropPlace): void;
-  onOpenProps?: () => void;
+  onOpenProps?: (id: UUID) => void;
 };
 
 const GRIP_ICON = `<svg class="tree-drag-icon" width="10" height="14" viewBox="0 0 10 14" fill="none" aria-hidden="true">
@@ -40,6 +39,26 @@ function visibilityIcon(visible: boolean): string {
   </svg>`;
 }
 
+function propsIcon(): string {
+  return `<svg class="props-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="2.25" stroke="currentColor" stroke-width="1.25"/>
+    <path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function createPropsButton(id: UUID, label: string, onOpen: (id: UUID) => void): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "props-btn";
+  btn.setAttribute("aria-label", `Propriedades de ${label}`);
+  btn.innerHTML = propsIcon();
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onOpen(id);
+  });
+  return btn;
+}
+
 function createDragHandle(id: UUID): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -61,7 +80,6 @@ function appendPanelRow(
   collisionIds: Set<UUID> | undefined,
   cbs: TreeCallbacks,
   inGroup: boolean,
-  registerDoubleTap: ((key: string, x: number, y: number) => boolean) | null,
 ) {
   const item = document.createElement("div");
   item.dataset.panelId = p.id;
@@ -80,6 +98,10 @@ function appendPanelRow(
   label.textContent = p.name;
   item.appendChild(label);
 
+  if (cbs.onOpenProps) {
+    item.appendChild(createPropsButton(p.id, p.name, cbs.onOpenProps));
+  }
+
   const eye = document.createElement("button");
   eye.type = "button";
   eye.className = "visibility-btn";
@@ -93,15 +115,15 @@ function appendPanelRow(
 
   item.addEventListener("click", (e) => {
     if (!p.visible) return;
-    if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
-    if (registerDoubleTap?.(p.id, e.clientX, e.clientY)) return;
+    if ((e.target as HTMLElement).closest(".tree-drag-handle, .props-btn, .visibility-btn")) return;
     cbs.onSelect(p.id, e.shiftKey, inGroup);
   });
 
-  if (inGroup) {
+  if (cbs.onOpenProps) {
     item.addEventListener("dblclick", (e) => {
+      if ((e.target as HTMLElement).closest(".tree-drag-handle, .props-btn, .visibility-btn")) return;
       e.preventDefault();
-      cbs.onSelect(p.id, e.shiftKey, true);
+      cbs.onOpenProps!(p.id);
     });
   }
   container.appendChild(item);
@@ -113,7 +135,6 @@ function appendGroupBlock(
   members: Panel[],
   selectedIds: Set<UUID>,
   cbs: TreeCallbacks,
-  registerDoubleTap: ((key: string, x: number, y: number) => boolean) | null,
 ) {
   const block = document.createElement("div");
   block.className = "tree-block";
@@ -142,6 +163,10 @@ function appendGroupBlock(
   count.textContent = String(members.length);
   header.appendChild(count);
 
+  if (cbs.onOpenProps) {
+    header.appendChild(createPropsButton(group.id, group.name, cbs.onOpenProps));
+  }
+
   const allVisible = members.every(m => m.visible);
   const eye = document.createElement("button");
   eye.type = "button";
@@ -155,16 +180,24 @@ function appendGroupBlock(
   header.appendChild(eye);
 
   header.addEventListener("click", (e) => {
-    if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
-    if (registerDoubleTap?.(group.id, e.clientX, e.clientY)) return;
+    if ((e.target as HTMLElement).closest(".tree-drag-handle, .props-btn, .visibility-btn")) return;
     cbs.onSelectGroup(group.id);
   });
+
+  if (cbs.onOpenProps) {
+    header.addEventListener("dblclick", (e) => {
+      if ((e.target as HTMLElement).closest(".tree-drag-handle, .props-btn, .visibility-btn")) return;
+      e.preventDefault();
+      cbs.onOpenProps!(group.id);
+    });
+  }
+
   block.appendChild(header);
 
   const membersEl = document.createElement("div");
   membersEl.className = "tree-group-members";
   for (const p of members) {
-    appendPanelRow(membersEl, p, selectedIds, undefined, cbs, true, registerDoubleTap);
+    appendPanelRow(membersEl, p, selectedIds, undefined, cbs, true);
   }
   block.appendChild(membersEl);
 
@@ -245,9 +278,6 @@ function attachTreeDnD(container: HTMLElement, cbs: TreeCallbacks) {
 
 export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
   attachTreeDnD(container, cbs);
-  const registerDoubleTap = cbs.onOpenProps
-    ? createDoubleTapHandler(() => cbs.onOpenProps!())
-    : null;
 
   function update(
     project: Project,
@@ -276,7 +306,6 @@ export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
           orderedGroupMembers(project, group.id),
           sel,
           cbs,
-          registerDoubleTap,
         );
         continue;
       }
@@ -290,7 +319,7 @@ export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
       const block = document.createElement("div");
       block.className = "tree-block tree-block--solo";
       block.dataset.dropTopId = panel.id;
-      appendPanelRow(block, panel, sel, collisionIds, cbs, false, registerDoubleTap);
+      appendPanelRow(block, panel, sel, collisionIds, cbs, false);
       container.appendChild(block);
     }
   }

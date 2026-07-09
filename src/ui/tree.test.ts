@@ -85,4 +85,17 @@ describe("createPanelTree", () => {
     expect(el.querySelectorAll(".tree-drag-handle")).toHaveLength(1);
     expect(el.querySelector(".group-member .tree-drag-handle")).toBeNull();
   });
+
+  it("engrenagem abre propriedades do membro do grupo", () => {
+    const el = document.createElement("div");
+    const onOpenProps = vi.fn();
+    const tree = createPanelTree(el, { ...cbs, onOpenProps });
+    tree.update(makeProject(
+      [makePanel({ id: "a", groupId: "g1" }), makePanel({ id: "b", groupId: "g1" })],
+      [{ id: "g1", name: "Caixote" }],
+    ), []);
+    const gear = el.querySelector("[data-panel-id='a'] .props-btn") as HTMLButtonElement;
+    gear.click();
+    expect(onOpenProps).toHaveBeenCalledWith("a");
+  });
 });

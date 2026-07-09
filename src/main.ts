@@ -247,6 +247,24 @@ function handleSelectGroup(groupId: UUID) {
   syncMeshes();
 }
 
+function openMobileProps() {
+  if (!isMobileViewport() || edState.selectedPanelIds.length === 0) return;
+  document.getElementById("m-props-sheet")?.classList.add("open");
+  document.getElementById("m-props-overlay")?.classList.add("open");
+}
+
+function openPanelProps(id: UUID) {
+  const group = project.groups.find(g => g.id === id);
+  if (group) {
+    handleSelectGroup(id);
+  } else {
+    const panel = project.panels.find(p => p.id === id);
+    if (!panel?.visible) return;
+    handleSelect(id, false, Boolean(panel.groupId));
+  }
+  openMobileProps();
+}
+
 function doGroup(name?: string) {
   const ids = edState.selectedPanelIds.filter(id => !project.panels.find(p => p.id === id)?.groupId);
   if (ids.length < 2) return;
@@ -272,6 +290,7 @@ const panelCallbacks = {
   onGroupVisibilityToggle: (gid: UUID, visible: boolean) => mutate(setGroupVisibility(project, gid, visible)),
   onReorderTopLevel: (activeId: UUID, overId: UUID, place: "before" | "after") =>
     mutate(reorderTopLevel(project, activeId, overId, place)),
+  onOpenProps: openPanelProps,
 };
 
 const propsCallbacks = {
@@ -306,10 +325,7 @@ const groupPropsCallbacks = {
 };
 
 const treeD = createPanelTree(document.getElementById("panel-tree")!, panelCallbacks);
-const treeM = createPanelTree(document.getElementById("m-panel-tree")!, {
-  ...panelCallbacks,
-  onOpenProps: () => openMobileProps(),
-});
+const treeM = createPanelTree(document.getElementById("m-panel-tree")!, panelCallbacks);
 const propsD = createPropertiesPanel(document.getElementById("properties")!, propsCallbacks);
 const propsM = createPropertiesPanel(document.getElementById("m-properties")!, propsCallbacks, { layout: "tabs" });
 const groupPropsD = createGroupPropertiesPanel(document.getElementById("properties")!, groupPropsCallbacks);
@@ -576,11 +592,6 @@ document.querySelectorAll<HTMLButtonElement>(".mnav-btn").forEach(btn => {
 const mPropsSheet = document.getElementById("m-props-sheet")!;
 const mPropsOverlay = document.getElementById("m-props-overlay")!;
 
-function openMobileProps() {
-  if (!isMobileViewport() || edState.selectedPanelIds.length === 0) return;
-  mPropsSheet.classList.add("open");
-  mPropsOverlay.classList.add("open");
-}
 function closeMobileProps() {
   mPropsSheet.classList.remove("open");
   mPropsOverlay.classList.remove("open");

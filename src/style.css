@@ -707,16 +707,22 @@ html, body {
 [data-panel-id].hidden {
   pointer-events: none;
 }
-[data-panel-id].hidden > .visibility-btn {
+[data-panel-id].hidden > .visibility-btn,
+[data-panel-id].hidden > .props-btn {
   pointer-events: auto;
   opacity: .75;
   color: var(--text);
+}
+[data-panel-id].hidden > .visibility-btn {
+  opacity: .75;
 }
 [data-panel-id].hidden .panel-name { opacity: .38; }
 [data-panel-id].collision { border-left: 2px solid var(--danger); }
 .panel-name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
+.tree-group > .props-btn,
 .tree-group > .visibility-btn,
+[data-panel-id] > .props-btn,
 [data-panel-id] > .visibility-btn {
   flex-shrink: 0;
   display: inline-flex;
@@ -733,12 +739,15 @@ html, body {
   opacity: .55;
   transition: opacity .1s, color .1s, background .1s;
 }
+[data-panel-id] > .props-btn:hover,
 [data-panel-id] > .visibility-btn:hover,
+.tree-group > .props-btn:hover,
 .tree-group > .visibility-btn:hover {
   opacity: 1;
   color: var(--text);
   background: rgba(255, 255, 255, .05);
 }
+.props-icon,
 .visibility-icon { display: block; }
 
 /* ── edge indicator — signature element ──────────────────────────────────── */
