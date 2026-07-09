@@ -143,7 +143,7 @@ export function createApp() {
     hint.classList.toggle("hidden", project.panels.length > 0);
     selectionDrag.notifySelectionChange();
     mobileMoveToggle.sync();
-    mobileSplit?.setEnabled(edState.selectedPanelIds.length > 0);
+    mobileSplit?.setEnabled(project.panels.length > 0);
   }
 
   function mutate(next: Project) {

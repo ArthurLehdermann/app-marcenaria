@@ -145,13 +145,13 @@ html, body {
   border-color: var(--border-2);
 }
 #topbar:has(#toolbar-wrap.open) {
-  z-index: 50;
+  z-index: 70;
 }
 #toolbar-menu-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 45;
+  z-index: 65;
 }
 #toolbar-menu-overlay.open { display: block; }
 #toolbar {
@@ -167,7 +167,7 @@ html, body {
   border: 1px solid var(--border-2);
   border-radius: var(--r);
   box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
-  z-index: 40;
+  z-index: 71;
 }
 #toolbar-wrap.open #toolbar { display: flex; }
 #toolbar button {
@@ -367,7 +367,13 @@ html, body {
   box-shadow: 0 4px 20px rgba(0,0,0,.5);
   z-index: 60;
   touch-action: manipulation;
-  transition: background .15s, transform .1s;
+  transition: background .15s, transform .15s, opacity .15s;
+}
+#app:has(#toolbar-wrap.open) #fab {
+  z-index: 30;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.88);
 }
 #fab:is(:active, .is-pressed) {
   transform: scale(.91);
@@ -643,6 +649,8 @@ html, body {
   opacity: .45;
   transition: opacity .12s, color .12s, background .12s;
   touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .tree-drag-handle:hover,
@@ -828,6 +836,12 @@ html, body {
   [data-multi-form] input[type="number"],
   .project-name-input {
     font-size: 16px;
+  }
+
+  .tree-drag-handle {
+    width: 32px;
+    min-height: 36px;
+    opacity: .8;
   }
 }
 

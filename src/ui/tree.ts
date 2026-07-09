@@ -6,6 +6,7 @@ import {
   type DropPlace,
 } from "../core/treeOrder";
 import { createEdgeIndicator } from "./edgeIndicator";
+import { attachTreePointerReorder } from "./treeReorder";
 
 export type TreeCallbacks = {
   onSelect(id: UUID, additive: boolean, focusMember?: boolean): void;
@@ -63,13 +64,11 @@ function createDragHandle(id: UUID): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "tree-drag-handle";
-  btn.draggable = true;
   btn.dataset.dragScope = "top";
   btn.dataset.dragId = id;
   btn.setAttribute("aria-label", "Arrastar para reordenar");
   btn.innerHTML = GRIP_ICON;
   btn.addEventListener("click", e => e.stopPropagation());
-  btn.addEventListener("mousedown", e => e.stopPropagation());
   return btn;
 }
 
@@ -204,80 +203,8 @@ function appendGroupBlock(
   container.appendChild(block);
 }
 
-type DragPayload = { id: UUID };
-
-function dropPlaceAt(event: DragEvent, el: HTMLElement): DropPlace {
-  const rect = el.getBoundingClientRect();
-  return event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-}
-
-function clearDropMarkers(root: HTMLElement) {
-  root.querySelectorAll(".tree-drop-before, .tree-drop-after, .tree-dragging")
-    .forEach(n => n.classList.remove("tree-drop-before", "tree-drop-after", "tree-dragging"));
-}
-
-function attachTreeDnD(container: HTMLElement, cbs: TreeCallbacks) {
-  let payload: DragPayload | null = null;
-
-  container.addEventListener("dragstart", (e) => {
-    const handle = (e.target as HTMLElement).closest<HTMLElement>(".tree-drag-handle");
-    if (!handle) return;
-    const id = handle.dataset.dragId;
-    if (!id) return;
-
-    payload = { id };
-    e.dataTransfer!.effectAllowed = "move";
-    e.dataTransfer!.setData("text/plain", id);
-
-    const row = handle.closest(".tree-block, .tree-panel");
-    row?.classList.add("tree-dragging");
-  });
-
-  container.addEventListener("dragend", () => {
-    payload = null;
-    clearDropMarkers(container);
-  });
-
-  container.addEventListener("dragover", (e) => {
-    if (!payload) return;
-    e.preventDefault();
-    e.dataTransfer!.dropEffect = "move";
-    clearDropMarkers(container);
-
-    const target = (e.target as HTMLElement).closest<HTMLElement>("[data-drop-top-id]");
-    if (!target) return;
-
-    const targetId = target.dataset.dropTopId;
-    if (!targetId || targetId === payload.id) return;
-
-    target.classList.add(dropPlaceAt(e, target) === "before" ? "tree-drop-before" : "tree-drop-after");
-  });
-
-  container.addEventListener("dragleave", (e) => {
-    if (!(e.target as HTMLElement).closest("#panel-tree, #m-panel-tree, [data-panel-id], .tree-block")) {
-      clearDropMarkers(container);
-    }
-  });
-
-  container.addEventListener("drop", (e) => {
-    e.preventDefault();
-    if (!payload) return;
-
-    const target = (e.target as HTMLElement).closest<HTMLElement>("[data-drop-top-id]");
-    if (!target) return;
-
-    const overId = target.dataset.dropTopId;
-    if (!overId || overId === payload.id) return;
-
-    cbs.onReorderTopLevel(payload.id, overId, dropPlaceAt(e, target));
-
-    payload = null;
-    clearDropMarkers(container);
-  });
-}
-
 export function createPanelTree(container: HTMLElement, cbs: TreeCallbacks) {
-  attachTreeDnD(container, cbs);
+  attachTreePointerReorder(container, cbs);
 
   function update(
     project: Project,
