@@ -138,13 +138,24 @@ function expandedSelection(): UUID[] {
 }
 
 function activeGroupId(): UUID | null {
-  const ids = expandedSelection();
+  const ids = edState.selectedPanelIds;
   if (!ids.length) return null;
-  const gids = new Set(
-    ids.map(id => project.panels.find(p => p.id === id)?.groupId).filter(Boolean) as UUID[],
-  );
-  if (gids.size === 1) return [...gids][0];
-  return null;
+
+  const panels = ids
+    .map(id => project.panels.find(p => p.id === id))
+    .filter((p): p is Panel => Boolean(p));
+  if (!panels.length) return null;
+
+  const gids = new Set(panels.map(p => p.groupId).filter(Boolean) as UUID[]);
+  if (gids.size !== 1) return null;
+
+  const gid = [...gids][0]!;
+  const members = panelsInGroup(project, gid);
+  if (members.length < 2) return null;
+
+  const allMembersSelected = members.every(m => ids.includes(m.id));
+  const onlyThoseMembers = panels.every(p => p.groupId === gid) && ids.length === members.length;
+  return allMembersSelected && onlyThoseMembers ? gid : null;
 }
 
 function canCreateGroup(): boolean {
@@ -181,7 +192,7 @@ function syncMeshes() {
   }
   const collisions = findCollisions(project.panels);
   const collisionIds = new Set(collisions.flatMap(c => [c.a, c.b]));
-  const selected = new Set(expandedSelection());
+  const selected = new Set(edState.selectedPanelIds);
 
   for (const panel of project.panels) {
     let group = meshMap.get(panel.id);
@@ -207,17 +218,19 @@ function syncMeshes() {
 
 const hint = document.getElementById("viewport-hint")!;
 
-function handleSelect(id: UUID, additive: boolean) {
+function handleSelect(id: UUID, additive: boolean, focusMember = false) {
   const panel = project.panels.find(p => p.id === id);
   if (!panel?.visible) return;
 
   const useAdditive = additive || edState.groupPickMode;
   if (useAdditive) {
     edState = clickSelect(edState, id, true);
+  } else if (focusMember) {
+    edState = setSelection(edState, [id]);
   } else {
-    const panel = project.panels.find(p => p.id === id);
-    if (panel?.groupId) {
-      const members = panelsInGroup(project, panel.groupId).map(p => p.id);
+    const p = project.panels.find(x => x.id === id);
+    if (p?.groupId) {
+      const members = panelsInGroup(project, p.groupId).map(x => x.id);
       edState = setSelection(edState, members);
     } else {
       edState = setSelection(edState, [id]);
@@ -353,13 +366,8 @@ function refreshUI() {
     groupPropsM.update(project, gid);
   } else if (edState.selectedPanelIds.length === 1) {
     const p = project.panels.find(x => x.id === edState.selectedPanelIds[0]) ?? null;
-    if (p?.groupId) {
-      groupPropsD.update(project, p.groupId);
-      groupPropsM.update(project, p.groupId);
-    } else {
-      propsD.update(p);
-      propsM.update(p);
-    }
+    propsD.update(p);
+    propsM.update(p);
   } else if (edState.selectedPanelIds.length >= 2) {
     multiD.update(edState.selectedPanelIds.length);
     multiM.update(edState.selectedPanelIds.length);

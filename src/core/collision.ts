@@ -23,11 +23,12 @@ export function collides(a: Panel, b: Panel): boolean {
 export type Collision = { a: UUID; b: UUID };
 
 export function findCollisions(panels: Panel[]): Collision[] {
+  const visible = panels.filter(p => p.visible);
   const out: Collision[] = [];
-  for (let i = 0; i < panels.length; i++) {
-    for (let j = i + 1; j < panels.length; j++) {
-      if (collides(panels[i], panels[j])) {
-        out.push({ a: panels[i].id, b: panels[j].id });
+  for (let i = 0; i < visible.length; i++) {
+    for (let j = i + 1; j < visible.length; j++) {
+      if (collides(visible[i], visible[j])) {
+        out.push({ a: visible[i].id, b: visible[j].id });
       }
     }
   }

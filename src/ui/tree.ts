@@ -9,7 +9,7 @@ import { createEdgeIndicator } from "./edgeIndicator";
 import { createDoubleTapHandler } from "./doubleTap";
 
 export type TreeCallbacks = {
-  onSelect(id: UUID, additive: boolean): void;
+  onSelect(id: UUID, additive: boolean, focusMember?: boolean): void;
   onSelectGroup(groupId: UUID): void;
   onVisibilityToggle(id: UUID, visible: boolean): void;
   onGroupVisibilityToggle(groupId: UUID, visible: boolean): void;
@@ -95,8 +95,15 @@ function appendPanelRow(
     if (!p.visible) return;
     if ((e.target as HTMLElement).closest(".tree-drag-handle")) return;
     if (registerDoubleTap?.(p.id, e.clientX, e.clientY)) return;
-    cbs.onSelect(p.id, e.shiftKey);
+    cbs.onSelect(p.id, e.shiftKey, inGroup);
   });
+
+  if (inGroup) {
+    item.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      cbs.onSelect(p.id, e.shiftKey, true);
+    });
+  }
   container.appendChild(item);
 }
 

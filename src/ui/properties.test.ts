@@ -69,14 +69,39 @@ describe("createPropertiesPanel", () => {
     expect(onRotate).toHaveBeenCalledWith("rot-id");
   });
 
-  it("peca em grupo mostra cabecalho de bloco e oculta campos editaveis", () => {
+  it("peca em grupo mostra fita editavel sem dimensoes", () => {
     const el = document.createElement("div");
     const pp = createPropertiesPanel(el, { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() });
-    pp.update(makePanel({ groupId: "g1" }));
+    pp.update(makePanel({ groupId: "g1", name: "Lateral esq" }));
     expect(el.querySelector("[data-group-locked]")).not.toBeNull();
     expect(el.querySelector(".props-group-header")).not.toBeNull();
+    expect(el.querySelector("[name='edge_top']")).not.toBeNull();
     expect(el.querySelector("[name='width']")).toBeNull();
-    expect(el.querySelector("[name='edge_top']")).toBeNull();
+  });
+
+  it("peca em grupo no mobile abre aba borda", () => {
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(
+      el,
+      { onChange: vi.fn(), onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() },
+      { layout: "tabs" },
+    );
+    pp.update(makePanel({ groupId: "g1" }));
+    expect(el.querySelector<HTMLElement>("[data-tab-pane='edge']")?.hidden).toBe(false);
+    expect(el.querySelector("[name='edge_top']")).not.toBeNull();
+  });
+
+  it("alterar fita em peca de grupo chama onChange", () => {
+    const onChange = vi.fn();
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(el, { onChange, onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() });
+    pp.update(makePanel({ id: "x", groupId: "g1" }));
+    const cb = el.querySelector<HTMLInputElement>("[name='edge_top']")!;
+    cb.checked = true;
+    cb.dispatchEvent(new Event("change"));
+    expect(onChange).toHaveBeenCalledWith("x", {
+      edges: { top: true, bottom: false, left: false, right: false },
+    });
   });
 
   it("syncPosition atualiza xyz sem reconstruir formulario", () => {
@@ -130,6 +155,18 @@ describe("createPropertiesPanel", () => {
     pp.update(makePanel({ edges: { top: true, bottom: false, left: false, right: false } }));
     expect(el.querySelector<HTMLElement>(".props-tabs")?.dataset.activeTab).toBe("edge");
     expect(el.querySelector<HTMLElement>("[data-tab-pane='edge']")?.hidden).toBe(false);
+  });
+
+  it("campo vazio ou invalido em dimensao usa minimo 1 mm", () => {
+    const onChange = vi.fn();
+    const el = document.createElement("div");
+    const pp = createPropertiesPanel(el, { onChange, onDuplicate: vi.fn(), onDelete: vi.fn(), onRotate: vi.fn() });
+    pp.update(makePanel({ id: "x", width: 720 }));
+    const input = el.querySelector<HTMLInputElement>("[name='width']")!;
+    input.value = "";
+    input.dispatchEvent(new Event("change"));
+    expect(onChange).toHaveBeenCalledWith("x", { width: 1 });
+    expect(input.value).toBe("1");
   });
 
   it("borda usa nomes por extenso", () => {

@@ -14,7 +14,8 @@ function makePanel(over: Partial<Panel> = {}): Panel {
     upAxis: over.upAxis ?? "y",
     edges: over.edges ?? { top: false, bottom: false, left: false, right: false },
     color: "#ccc",
-    visible: true,
+    visible: over.visible ?? true,
+    ...over,
   };
 }
 
@@ -88,5 +89,14 @@ describe("findCollisions", () => {
     const found = findCollisions([a, b, c]);
     expect(found).toHaveLength(1);
     expect(found[0]).toEqual({ a: "a", b: "b" });
+  });
+
+  it("ignora colisao quando uma peca esta oculta", () => {
+    const a = makePanel({ id: "a", width: 100, height: 100, thickness: 100, position: { x: 0, y: 0, z: 0 } });
+    const b = makePanel({
+      id: "b", width: 100, height: 100, thickness: 100,
+      position: { x: 50, y: 50, z: 50 }, visible: false,
+    });
+    expect(findCollisions([a, b])).toHaveLength(0);
   });
 });

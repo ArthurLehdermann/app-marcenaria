@@ -106,6 +106,12 @@ describe("buildCsv", () => {
     expect(row).toBe('1,720,560,18,1,0,0,1,"Base"');
   });
 
+  it("nomes com aspas duplas sao escapados", () => {
+    const csv = buildCsv(makeProject([makePanel({ name: 'Lateral "frente"' })]));
+    const [, row] = csv.split("\n");
+    expect(row).toBe('1,720,560,18,0,0,0,0,"Lateral ""frente"""');
+  });
+
   it("nomes com ponto e virgula quando agrupados", () => {
     const panels = [
       makePanel({ id: "a", name: "Lat esq", width: 720, height: 560, thickness: 18 }),

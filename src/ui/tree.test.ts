@@ -48,6 +48,19 @@ describe("createPanelTree", () => {
     expect(el.querySelectorAll(".group-member")).toHaveLength(2);
   });
 
+  it("clique em membro de bloco foca a peca", () => {
+    const el = document.createElement("div");
+    const onSelect = vi.fn();
+    const tree = createPanelTree(el, { ...cbs, onSelect });
+    tree.update(makeProject(
+      [makePanel({ id: "a", groupId: "g1" }), makePanel({ id: "b", groupId: "g1" })],
+      [{ id: "g1", name: "Caixote" }],
+    ), []);
+    const row = el.querySelector("[data-panel-id='a']") as HTMLElement;
+    row.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(onSelect).toHaveBeenCalledWith("a", false, true);
+  });
+
   it("shift+clique passa additive true", () => {
     const el = document.createElement("div");
     const onSelect = vi.fn();
@@ -55,7 +68,7 @@ describe("createPanelTree", () => {
     tree.update(makeProject([makePanel({ id: "x" })]), []);
     const row = el.querySelector("[data-panel-id='x']") as HTMLElement;
     row.dispatchEvent(new MouseEvent("click", { shiftKey: true, bubbles: true }));
-    expect(onSelect).toHaveBeenCalledWith("x", true);
+    expect(onSelect).toHaveBeenCalledWith("x", true, false);
   });
 
   it("peca solta tem alca; membro de bloco nao", () => {

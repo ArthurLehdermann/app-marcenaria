@@ -44,13 +44,17 @@ export function buildWhatsappOrder(project: Project): string {
   return blocks.join("\n\n").replace(/\n/g, "\r\n");
 }
 
+function csvQuotedNames(names: string[]): string {
+  return `"${names.map(n => n.replace(/"/g, '""')).join("; ")}"`;
+}
+
 export function buildCsv(project: Project): string {
   const groups = groupPieces(project.panels).sort((a, b) => a.thickness - b.thickness);
   const head = "qtd,largura_mm,altura_mm,espessura_mm,fita_sup,fita_inf,fita_esq,fita_dir,nomes";
   const rows = groups.map(g =>
     [g.qty, g.width, g.height, g.thickness,
      +g.edges.top, +g.edges.bottom, +g.edges.left, +g.edges.right,
-     `"${g.names.join("; ")}"`].join(",")
+     csvQuotedNames(g.names)].join(",")
   );
   return [head, ...rows].join("\n");
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   addPanel, updatePanel, removePanel,
   duplicatePanel, rotate90,
-  exportProject, importProject,
+  exportProject, importProject, allowedPanelPatchInGroup,
 } from "./project";
 import { panelBox, boxSize } from "./geometry";
 import type { Panel, Project } from "./types";
@@ -79,7 +79,7 @@ describe("updatePanel", () => {
     expect(updated.panels[0].width).toBe(720);
   });
 
-  it("peca em grupo ignora dimensoes, fita e posicao", () => {
+  it("peca em grupo ignora dimensoes e posicao mas permite fita", () => {
     const grouped = makePanel({ id: "a", groupId: "g1", width: 720, visible: true });
     const proj = makeProject([grouped]);
     const updated = updatePanel(proj, "a", {
@@ -90,7 +90,7 @@ describe("updatePanel", () => {
       edges: { top: true, bottom: true, left: true, right: true },
     });
     expect(updated.panels[0].width).toBe(720);
-    expect(updated.panels[0].edges.top).toBe(false);
+    expect(updated.panels[0].edges.top).toBe(true);
     expect(updated.panels[0].position.x).toBe(0);
   });
 

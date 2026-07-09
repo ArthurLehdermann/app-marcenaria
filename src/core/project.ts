@@ -9,10 +9,11 @@ export function addPanel(project: Project, panel: Panel): Project {
   return { ...project, panels: [...project.panels, panel] };
 }
 
-/** Peças em grupo: só visibilidade individual; dimensões/fita/posição pelo bloco. */
+/** Peças em grupo: visibilidade e fita por peça; dimensões/posição pelo bloco. */
 export function allowedPanelPatchInGroup(patch: Partial<Panel>): Partial<Panel> {
   const out: Partial<Panel> = {};
   if ("visible" in patch) out.visible = patch.visible;
+  if ("edges" in patch && patch.edges) out.edges = patch.edges;
   return out;
 }
 
