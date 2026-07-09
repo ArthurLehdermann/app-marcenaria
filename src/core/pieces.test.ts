@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupPieces, areaByThicknessM2 } from "./pieces";
+import { groupPieces, areaByThicknessM2, totalEdgeBandingM } from "./pieces";
 import type { Panel } from "./types";
 
 function makePanel(over: Partial<Panel> = {}): Panel {
@@ -103,5 +103,28 @@ describe("areaByThicknessM2", () => {
     expect(area.get(18)).toBeCloseTo(1.5);
     expect(area.get(6)).toBeCloseTo(1.0);
     expect(area.size).toBe(2);
+  });
+});
+
+describe("totalEdgeBandingM", () => {
+  it("soma lados marcados em metros", () => {
+    const panels = [
+      makePanel({
+        width: 720,
+        height: 560,
+        edges: { top: true, bottom: false, left: true, right: false },
+      }),
+    ];
+    // 720 + 560 = 1280 mm
+    expect(totalEdgeBandingM(panels)).toBeCloseTo(1.28);
+  });
+
+  it("acumula todas as pecas", () => {
+    const panels = [
+      makePanel({ width: 1000, height: 1000, edges: { top: true, bottom: true, left: false, right: false } }),
+      makePanel({ width: 500, height: 500, edges: { top: false, bottom: false, left: true, right: true } }),
+    ];
+    // 2000 + 1000 = 3000 mm
+    expect(totalEdgeBandingM(panels)).toBeCloseTo(3);
   });
 });

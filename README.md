@@ -24,8 +24,9 @@ npm run test
 ## Estrutura
 
 - `src/core/` dominio puro, testavel sem navegador. Nunca importa Three.js.
-- `src/render/` renderer Three.js (a implementar).
-- `src/ui/` arvore, propriedades, lista de pecas (a implementar).
+- `src/app/` orquestracao do editor (estado, cena, input). `main.ts` so bootstrap.
+- `src/render/` renderer Three.js.
+- `src/ui/` arvore, propriedades, toolbar e paineis.
 
 ## Progresso
 

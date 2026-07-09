@@ -69,7 +69,7 @@ describe("buildWhatsappOrder", () => {
 
   it("rodape com area e total de pecas", () => {
     const text = buildWhatsappOrder(makeProject([makePanel({ width: 1000, height: 1000, thickness: 18 })]));
-    expect(text).toContain("1.00 m2, 1 pecas");
+    expect(text).toContain("1.00 m2, 0.00 m fita, 1 pecas");
   });
 
   it("espessuras diferentes geram blocos separados, ordenados", () => {
@@ -89,6 +89,26 @@ describe("buildWhatsappOrder", () => {
     const panels = [makePanel({ id: "a" }), makePanel({ id: "b" })];
     const text = buildWhatsappOrder(makeProject(panels));
     expect(text).toContain(", 2 pecas");
+  });
+
+  it("rodape inclui metragem total de fita", () => {
+    const panels = [
+      makePanel({
+        id: "a",
+        width: 600,
+        height: 742,
+        edges: { top: false, bottom: true, left: true, right: true },
+      }),
+      makePanel({
+        id: "b",
+        width: 600,
+        height: 742,
+        edges: { top: false, bottom: true, left: true, right: true },
+      }),
+    ];
+    const text = buildWhatsappOrder(makeProject(panels));
+    // 2x (600 + 742 + 742) mm = 4168 mm = 4.17 m
+    expect(text).toContain("4.17 m fita");
   });
 });
 

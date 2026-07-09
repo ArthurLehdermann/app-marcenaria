@@ -1,5 +1,5 @@
 import type { Project, EdgeSide } from "./types";
-import { groupPieces, areaByThicknessM2 } from "./pieces";
+import { groupPieces, areaByThicknessM2, totalEdgeBandingM } from "./pieces";
 
 const EDGE_SHORT: Record<EdgeSide, string> = {
   top: "Sup", bottom: "Inf", left: "Esq", right: "Dir",
@@ -38,7 +38,8 @@ export function buildWhatsappOrder(project: Project): string {
   const areaTotal = thicknesses.length === 1
     ? `${(area.get(thicknesses[0]) ?? 0).toFixed(2)} m2`
     : thicknesses.map(t => `${t}mm: ${(area.get(t) ?? 0).toFixed(2)} m2`).join(", ");
-  blocks.push(`${areaTotal}, ${project.panels.length} pecas`);
+  const edgeTotal = `${totalEdgeBandingM(project.panels).toFixed(2)} m fita`;
+  blocks.push(`${areaTotal}, ${edgeTotal}, ${project.panels.length} pecas`);
 
   // CRLF: WhatsApp preserva quebras melhor que LF sozinho
   return blocks.join("\n\n").replace(/\n/g, "\r\n");

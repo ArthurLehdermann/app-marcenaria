@@ -43,3 +43,15 @@ export function areaByThicknessM2(panels: Panel[]): Map<Thickness, number> {
   }
   return out;
 }
+
+/** Comprimento total de fita de borda (lados marcados), em metros. */
+export function totalEdgeBandingM(panels: Panel[]): number {
+  let mm = 0;
+  for (const p of panels) {
+    if (p.edges.top) mm += p.width;
+    if (p.edges.bottom) mm += p.width;
+    if (p.edges.left) mm += p.height;
+    if (p.edges.right) mm += p.height;
+  }
+  return mm / 1000;
+}
