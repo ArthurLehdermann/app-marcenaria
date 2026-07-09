@@ -91,6 +91,6 @@ export function setupMobileZoomLock({ root, canvas }: MobileZoomLockOptions): ()
 
 /** @deprecated Use setupMobileZoomLock */
 export function preventDoubleTapZoom(canvas: HTMLElement) {
-  const root = canvas.closest("#app") ?? canvas;
+  const root = canvas.closest<HTMLElement>("#app") ?? canvas;
   return setupMobileZoomLock({ root, canvas });
 }
