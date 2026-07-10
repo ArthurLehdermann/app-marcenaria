@@ -15,8 +15,15 @@ export function createPiecesPanel(container: HTMLElement) {
       row.appendChild(qty);
 
       const dims = document.createElement("span");
-      dims.textContent = ` × ${g.width} × ${g.height} × ${g.thickness} mm`;
+      dims.className = "piece-dims";
+      dims.textContent = `× ${g.width} × ${g.height} × ${g.thickness} mm`;
       row.appendChild(dims);
+
+      const names = document.createElement("span");
+      names.className = "piece-names";
+      names.textContent = g.names.join(" · ");
+      names.title = g.names.join("; ");
+      row.appendChild(names);
 
       container.appendChild(row);
     }

@@ -46,6 +46,18 @@ describe("createPiecesPanel", () => {
     expect(row.textContent).toContain("15");
   });
 
+  it("exibe nomes discretos ao lado das dimensoes", () => {
+    const el = document.createElement("div");
+    const pp = createPiecesPanel(el);
+    pp.update([
+      makePanel({ id: "a", name: "Lateral esq", width: 720, height: 560, thickness: 18 }),
+      makePanel({ id: "b", name: "Lateral dir", width: 720, height: 560, thickness: 18 }),
+    ]);
+    const names = el.querySelector(".piece-names")!;
+    expect(names.textContent).toBe("Lateral esq · Lateral dir");
+    expect(names.className).toBe("piece-names");
+  });
+
   it("update substitui conteudo anterior", () => {
     const el = document.createElement("div");
     const pp = createPiecesPanel(el);
