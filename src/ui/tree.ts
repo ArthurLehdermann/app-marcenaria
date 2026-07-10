@@ -60,6 +60,10 @@ function createPropsButton(id: UUID, label: string, onOpen: (id: UUID) => void):
   return btn;
 }
 
+function formatPanelDims(p: Panel): string {
+  return `${p.width} × ${p.height} × ${p.thickness}`;
+}
+
 function createDragHandle(id: UUID): HTMLButtonElement {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -93,8 +97,15 @@ function appendPanelRow(
   item.appendChild(createEdgeIndicator(p));
 
   const label = document.createElement("span");
-  label.className = "panel-name";
-  label.textContent = p.name;
+  label.className = "panel-label";
+  const name = document.createElement("span");
+  name.className = "panel-name";
+  name.textContent = p.name;
+  const dims = document.createElement("span");
+  dims.className = "panel-dims";
+  dims.textContent = formatPanelDims(p);
+  label.appendChild(name);
+  label.appendChild(dims);
   item.appendChild(label);
 
   if (cbs.onOpenProps) {

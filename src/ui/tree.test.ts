@@ -37,6 +37,15 @@ describe("createPanelTree", () => {
     expect(el.querySelectorAll("[data-panel-id]")).toHaveLength(2);
   });
 
+  it("mostra medidas discretas ao lado do nome", () => {
+    const el = document.createElement("div");
+    const tree = createPanelTree(el, cbs);
+    tree.update(makeProject([makePanel({ id: "a", name: "Base", width: 720, height: 560, thickness: 18 })]), []);
+    const row = el.querySelector("[data-panel-id='a']")!;
+    expect(row.querySelector(".panel-name")?.textContent).toBe("Base");
+    expect(row.querySelector(".panel-dims")?.textContent).toBe("720 × 560 × 18");
+  });
+
   it("renderiza grupo com cabecalho e membros", () => {
     const el = document.createElement("div");
     const tree = createPanelTree(el, cbs);

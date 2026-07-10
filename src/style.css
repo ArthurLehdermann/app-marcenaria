@@ -724,9 +724,31 @@ html, body {
 [data-panel-id].hidden > .visibility-btn {
   opacity: .75;
 }
-[data-panel-id].hidden .panel-name { opacity: .38; }
+[data-panel-id].hidden .panel-name,
+[data-panel-id].hidden .panel-dims { opacity: .38; }
 [data-panel-id].collision { border-left: 2px solid var(--danger); }
-.panel-name { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.panel-label {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+.panel-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.panel-dims {
+  flex-shrink: 0;
+  font: 11px var(--font-mono);
+  color: var(--muted);
+  opacity: .85;
+}
 
 .tree-group > .props-btn,
 .tree-group > .visibility-btn,
