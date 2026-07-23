@@ -27,7 +27,7 @@ services:
       - "traefik.http.routers.marcenaria-web.rule=Host(`marcenaria.morla.com.br`)"
       - "traefik.http.routers.marcenaria-web.entrypoints=websecure"
       - "traefik.http.routers.marcenaria-web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.marcenaria-web.middlewares=marcenaria-headers"
+      - "traefik.http.routers.marcenaria-web.middlewares=marcenaria-headers,compress-all@file"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.Referrer-Policy=strict-origin-when-cross-origin"
