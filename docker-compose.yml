@@ -6,14 +6,14 @@
 #   marcenaria.morla.com.br  → app (Vite static)
 
 networks:
-  traefik_public:
+  traefik:
     external: true
 
 services:
   web:
     build: .
     image: ${REGISTRY:-ghcr.io/arthurlehdermann}/app-marcenaria:${IMAGE_TAG:?defina IMAGE_TAG com o SHA do commit}
-    container_name: marcenaria_web
+    container_name: app_marcenaria_web
     restart: always
     deploy:
       resources:
@@ -21,15 +21,15 @@ services:
           cpus: "0.5"
           memory: 256m
     networks:
-      - traefik_public
+      - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.marcenaria-web.rule=Host(`marcenaria.morla.com.br`)"
-      - "traefik.http.routers.marcenaria-web.entrypoints=websecure"
-      - "traefik.http.routers.marcenaria-web.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.marcenaria-web.middlewares=marcenaria-headers,compress-all@file"
+      - "traefik.http.routers.app-marcenaria-web.rule=Host(`marcenaria.staging.bigworks.com.br`)"
+      - "traefik.http.routers.app-marcenaria-web.entrypoints=websecure"
+      - "traefik.http.routers.app-marcenaria-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.app-marcenaria-web.middlewares=marcenaria-headers,compress-all@file"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.X-Content-Type-Options=nosniff"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.X-Frame-Options=SAMEORIGIN"
       - "traefik.http.middlewares.marcenaria-headers.headers.customResponseHeaders.Referrer-Policy=strict-origin-when-cross-origin"
-      - "traefik.http.services.marcenaria-web.loadbalancer.server.port=8080"
-      - "traefik.docker.network=traefik_public"
+      - "traefik.http.services.app-marcenaria-web.loadbalancer.server.port=8080"
+      - "traefik.docker.network=traefik"
