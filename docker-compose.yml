@@ -3,7 +3,7 @@
 #   IMAGE_TAG=$(git rev-parse --short HEAD) docker compose -p marcenaria up -d --build
 #
 # Domínio:
-#   marcenaria.morla.com.br  → app (Vite static)
+#   marcenaria.staging.bigworks.com.br  → app (Vite static)
 
 networks:
   traefik:
