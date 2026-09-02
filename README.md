@@ -2,7 +2,7 @@
 
 App web para o marceneiro montar o projeto em painéis, marcar fita de borda e mandar o pedido de corte para a madeireira.
 
-Produção: [marcenaria.morla.com.br](https://marcenaria.morla.com.br) — **versão V0** em produção.
+No ar: [marcenaria.staging.bigworks.com.br](https://marcenaria.staging.bigworks.com.br) — **versão V0**, hospedada na VPS Staging.
 
 ## O que faz
 

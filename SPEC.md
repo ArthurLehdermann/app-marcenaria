@@ -2,7 +2,7 @@
 
 **spec-v0.1** — documenta o que existe hoje (V0) e o que vem depois.
 
-Produção: [marcenaria.morla.com.br](https://marcenaria.morla.com.br)
+No ar: [marcenaria.staging.bigworks.com.br](https://marcenaria.staging.bigworks.com.br)
 
 ---
 
