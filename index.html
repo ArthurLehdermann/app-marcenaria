@@ -93,6 +93,18 @@
       </div>
     </div>
 
+    <div id="paste-project-overlay" aria-hidden="true">
+      <div id="paste-project-dialog" role="dialog" aria-labelledby="paste-project-title" aria-modal="true">
+        <h2 id="paste-project-title">Colar projeto (JSON)</h2>
+        <p class="paste-project-lead">Cole o JSON exportado do Marcenaria ou gerado pelo Jarbas.</p>
+        <textarea id="paste-project-text" rows="12" spellcheck="false" placeholder='{"name":"...","panels":[...]}'></textarea>
+        <div class="paste-project-actions">
+          <button id="btn-paste-project-cancel" type="button">Cancelar</button>
+          <button id="btn-paste-project-import" type="button" class="primary">Importar</button>
+        </div>
+      </div>
+    </div>
+
     <div id="m-props-overlay"></div>
     <div id="m-props-sheet">
       <div id="m-props-drag"></div>

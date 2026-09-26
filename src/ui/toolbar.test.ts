@@ -5,7 +5,8 @@ import { createToolbar } from "./toolbar";
 function mockCbs(over: Partial<Parameters<typeof createToolbar>[1]> = {}) {
   return {
     onNew: vi.fn(),
-    onOpen: vi.fn(),
+    onOpenUpload: vi.fn(),
+    onOpenPaste: vi.fn(),
     onSave: vi.fn(),
     onExport: vi.fn(),
     onUndo: vi.fn(),
@@ -52,6 +53,24 @@ describe("createToolbar", () => {
     toolbar.setCanNew(true);
     const newBtn = el.querySelector("[data-action='new']") as HTMLButtonElement;
     expect(newBtn.disabled).toBe(false);
+  });
+
+  it("abrir abre submenu upload e colar", () => {
+    const onOpenUpload = vi.fn();
+    const onOpenPaste = vi.fn();
+    const el = document.createElement("div");
+    createToolbar(el, mockCbs({ onOpenUpload, onOpenPaste }));
+    const openBtn = el.querySelector("[data-action='open']") as HTMLElement;
+    openBtn.click();
+    const upload = el.querySelector("[data-action='open-upload']") as HTMLElement;
+    const paste = el.querySelector("[data-action='open-paste']") as HTMLElement;
+    expect(upload).not.toBeNull();
+    expect(paste).not.toBeNull();
+    upload.click();
+    expect(onOpenUpload).toHaveBeenCalledOnce();
+    openBtn.click();
+    paste.click();
+    expect(onOpenPaste).toHaveBeenCalledOnce();
   });
 
   it("clicar em salvar chama onSave", () => {

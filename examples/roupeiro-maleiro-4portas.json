@@ -1,0 +1,193 @@
+{
+  "id": "b7e4c2a1-9f3d-4e5b-8c1d-2a6f0e8d4b3c",
+  "name": "Roupeiro - maleiro + 4 portas",
+  "settings": {
+    "defaultMaterial": "MDF 18 mm",
+    "defaultThickness": 18
+  },
+  "groups": [
+    {
+      "id": "c1a2b3c4-d5e6-4789-a012-3456789abcde",
+      "name": "Caixa",
+      "memberOrder": [
+        "p-lateral-esq",
+        "p-lateral-dir",
+        "p-base",
+        "p-tampo",
+        "p-fundo",
+        "p-divisoria",
+        "p-prateleira-maleiro"
+      ]
+    },
+    {
+      "id": "d2b3c4d5-e6f7-4890-b123-456789abcdef",
+      "name": "Maleiro (portas)",
+      "memberOrder": [
+        "p-porta-maleiro-esq",
+        "p-porta-maleiro-dir"
+      ]
+    },
+    {
+      "id": "e3c4d5e6-f7a8-4901-c234-56789abcdef0",
+      "name": "Portas inferiores",
+      "memberOrder": [
+        "p-porta-baixa-esq",
+        "p-porta-baixa-dir"
+      ]
+    }
+  ],
+  "treeOrder": [
+    "c1a2b3c4-d5e6-4789-a012-3456789abcde",
+    "d2b3c4d5-e6f7-4890-b123-456789abcdef",
+    "e3c4d5e6-f7a8-4901-c234-56789abcdef0"
+  ],
+  "panels": [
+    {
+      "id": "p-lateral-esq",
+      "name": "Lateral esquerda",
+      "width": 700,
+      "height": 2415,
+      "thickness": 18,
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": false, "right": true },
+      "color": "#c4a574",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-lateral-dir",
+      "name": "Lateral direita",
+      "width": 700,
+      "height": 2415,
+      "thickness": 18,
+      "position": { "x": 938, "y": 0, "z": 0 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": true, "right": false },
+      "color": "#c4a574",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-base",
+      "name": "Base",
+      "width": 920,
+      "height": 700,
+      "thickness": 18,
+      "position": { "x": 18, "y": 0, "z": 0 },
+      "upAxis": "z",
+      "edges": { "top": false, "bottom": false, "left": true, "right": true },
+      "color": "#a08050",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-tampo",
+      "name": "Tampo",
+      "width": 920,
+      "height": 700,
+      "thickness": 18,
+      "position": { "x": 18, "y": 2397, "z": 0 },
+      "upAxis": "z",
+      "edges": { "top": false, "bottom": false, "left": true, "right": true },
+      "color": "#a08050",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-fundo",
+      "name": "Fundo",
+      "width": 920,
+      "height": 2415,
+      "thickness": 18,
+      "position": { "x": 18, "y": 0, "z": -682 },
+      "upAxis": "y",
+      "edges": { "top": false, "bottom": false, "left": false, "right": false },
+      "color": "#8b7355",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-divisoria",
+      "name": "Divisória central",
+      "width": 700,
+      "height": 2415,
+      "thickness": 18,
+      "position": { "x": 469, "y": 0, "z": 0 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": false, "right": false },
+      "color": "#a08050",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-prateleira-maleiro",
+      "name": "Prateleira base maleiro",
+      "width": 920,
+      "height": 700,
+      "thickness": 18,
+      "position": { "x": 18, "y": 1800, "z": 0 },
+      "upAxis": "z",
+      "edges": { "top": false, "bottom": false, "left": true, "right": true },
+      "color": "#a08050",
+      "visible": true,
+      "groupId": "c1a2b3c4-d5e6-4789-a012-3456789abcde"
+    },
+    {
+      "id": "p-porta-maleiro-esq",
+      "name": "Porta maleiro esquerda",
+      "width": 460,
+      "height": 615,
+      "thickness": 18,
+      "position": { "x": 18, "y": 1800, "z": 18 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": true, "right": true },
+      "color": "#e8dcc8",
+      "visible": true,
+      "groupId": "d2b3c4d5-e6f7-4890-b123-456789abcdef"
+    },
+    {
+      "id": "p-porta-maleiro-dir",
+      "name": "Porta maleiro direita",
+      "width": 460,
+      "height": 615,
+      "thickness": 18,
+      "position": { "x": 478, "y": 1800, "z": 18 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": true, "right": true },
+      "color": "#e8dcc8",
+      "visible": true,
+      "groupId": "d2b3c4d5-e6f7-4890-b123-456789abcdef"
+    },
+    {
+      "id": "p-porta-baixa-esq",
+      "name": "Porta inferior esquerda",
+      "width": 460,
+      "height": 1800,
+      "thickness": 18,
+      "position": { "x": 18, "y": 0, "z": 18 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": true, "right": true },
+      "color": "#e8dcc8",
+      "visible": true,
+      "groupId": "e3c4d5e6-f7a8-4901-c234-56789abcdef0"
+    },
+    {
+      "id": "p-porta-baixa-dir",
+      "name": "Porta inferior direita",
+      "width": 460,
+      "height": 1800,
+      "thickness": 18,
+      "position": { "x": 478, "y": 0, "z": 18 },
+      "upAxis": "y",
+      "edges": { "top": true, "bottom": true, "left": true, "right": true },
+      "color": "#e8dcc8",
+      "visible": true,
+      "groupId": "e3c4d5e6-f7a8-4901-c234-56789abcdef0"
+    }
+  ],
+  "createdAt": "2026-09-24T17:30:00.000Z",
+  "updatedAt": "2026-09-24T17:30:00.000Z",
+  "appVersion": "1.0.0",
+  "schemaVersion": 2
+}
