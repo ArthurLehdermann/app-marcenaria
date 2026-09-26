@@ -23,13 +23,13 @@ function makePanel(over: Partial<Panel> = {}): Panel {
   };
 }
 
-function makeProject(panels: Panel[] = []): Project {
+function makeProject(panels: Panel[] = [], groups: Project["groups"] = []): Project {
   return {
     id: "proj1",
     name: "Teste",
     settings: { defaultMaterial: "MDF 18 mm", defaultThickness: 18 },
     panels,
-    groups: [],
+    groups,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     appVersion: "0.1.0",
