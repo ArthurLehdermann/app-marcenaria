@@ -191,6 +191,37 @@ html, body {
 #toolbar button:disabled { opacity: .35; cursor: default; }
 .toolbar-sep { display: none; }
 
+.toolbar-open-wrap {
+  position: relative;
+  width: 100%;
+}
+.toolbar-open-wrap > button[data-action="open"] {
+  width: 100%;
+}
+.toolbar-open-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+}
+.toolbar-open-menu[hidden] { display: none !important; }
+.toolbar-open-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font: 13px var(--font-ui);
+  cursor: pointer;
+}
+.toolbar-open-menu button:hover { background: var(--border); }
+
 /* workspace */
 #workspace { flex: 1 1 0; min-height: 0; position: relative; display: flex; overflow: hidden; }
 
@@ -605,6 +636,82 @@ html, body {
   transition: background .12s;
 }
 #btn-onboarding-close:hover {
+  background: var(--accent-hi);
+}
+
+/* ── colar JSON (Abrir) ───────────────────────────────────────────────────── */
+#paste-project-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .45);
+}
+#paste-project-overlay.open {
+  display: flex;
+}
+#paste-project-dialog {
+  width: min(100%, 520px);
+  max-height: min(90vh, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, .45);
+}
+#paste-project-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.paste-project-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+#paste-project-text {
+  flex: 1;
+  min-height: 200px;
+  resize: vertical;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font: 12px/1.45 var(--font-mono);
+  outline: none;
+}
+#paste-project-text:focus {
+  border-color: var(--accent);
+}
+.paste-project-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.paste-project-actions button {
+  padding: 9px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: 13px var(--font-ui);
+  cursor: pointer;
+}
+.paste-project-actions button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.paste-project-actions button.primary:hover {
   background: var(--accent-hi);
 }
 
@@ -1079,6 +1186,22 @@ html, body {
     padding: 5px 10px;
     background: var(--surface-2);
     font: 12px var(--font-ui);
+  }
+
+  .toolbar-open-wrap {
+    width: auto;
+  }
+  .toolbar-open-wrap > button[data-action="open"] {
+    width: auto;
+  }
+  .toolbar-open-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 148px;
+    margin-top: 0;
+    z-index: 20;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
   }
 
   .toolbar-sep {

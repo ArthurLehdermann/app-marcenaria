@@ -21,6 +21,7 @@ import { createMultiSelectPanel } from "../ui/multiSelectPanel";
 import { createPiecesPanel } from "../ui/piecesPanel";
 import { createProblemsPanel } from "../ui/problemsPanel";
 import { createToolbar } from "../ui/toolbar";
+import { openPasteProjectDialog } from "../ui/pasteProjectDialog";
 import { setupOnboarding } from "../ui/onboarding";
 import { setupMobileZoomLock } from "../ui/preventDoubleTapZoom";
 import { setupMobileSplit } from "../ui/mobileSplit";
@@ -335,6 +336,42 @@ export function createApp() {
     },
   );
 
+  function applyImportedProject(loaded: Project, opts?: { fit?: boolean }) {
+    edState = createEditorState(loadSnapEnabled());
+    history.init(loaded);
+    project = loaded;
+    saveProjectLocal(project);
+    syncMeshes();
+    refreshUI();
+    if (opts?.fit) fitToContent();
+  }
+
+  function openProjectFilePicker() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      try {
+        applyImportedProject(importProject(await file.text()), { fit: true });
+      } catch (e) {
+        alert(`Erro ao abrir: ${(e as Error).message}`);
+      }
+    });
+    input.click();
+  }
+
+  async function openProjectFromPaste() {
+    const text = await openPasteProjectDialog();
+    if (text === null) return;
+    try {
+      applyImportedProject(importProject(text), { fit: true });
+    } catch (e) {
+      alert(`Erro ao abrir: ${(e as Error).message}`);
+    }
+  }
+
   const toolbarHandle = createToolbar(document.getElementById("toolbar")!, {
     onNew: () => {
       if (!confirm("Criar novo projeto? O projeto atual será perdido.")) return;
@@ -347,23 +384,9 @@ export function createApp() {
       syncMeshes();
       refreshUI();
     },
-    onOpen: () => {
-      const input = document.createElement("input");
-      input.type = "file"; input.accept = ".json";
-      input.addEventListener("change", async () => {
-        const file = input.files?.[0]; if (!file) return;
-        try {
-          const loaded = importProject(await file.text());
-          edState = createEditorState(loadSnapEnabled());
-          history.init(loaded);
-          project = loaded;
-          saveProjectLocal(project);
-          syncMeshes();
-          refreshUI();
-          fitToContent();
-        } catch (e) { alert(`Erro ao abrir: ${(e as Error).message}`); }
-      });
-      input.click();
+    onOpenUpload: openProjectFilePicker,
+    onOpenPaste: () => {
+      void openProjectFromPaste();
     },
     onSave: () => {
       const blob = exportProject(project);

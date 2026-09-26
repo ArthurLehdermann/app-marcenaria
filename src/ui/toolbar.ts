@@ -6,7 +6,8 @@ export type ToolbarMobileMenu = {
 
 export type ToolbarCallbacks = {
   onNew(): void;
-  onOpen(): void;
+  onOpenUpload(): void;
+  onOpenPaste(): void;
   onSave(): void;
   onExport(): void;
   onUndo(): void;
@@ -54,7 +55,6 @@ export function createToolbar(
 
   const buttons: Array<[string, string, () => void]> = [
     ["new",    "Novo",     cbs.onNew],
-    ["open",   "Abrir",    cbs.onOpen],
     ["save",   "Salvar",   cbs.onSave],
     ["export", "Exportar", cbs.onExport],
     ["undo",   "Desfazer", cbs.onUndo],
@@ -69,6 +69,57 @@ export function createToolbar(
     container.appendChild(btn);
     actionButtons.set(action, btn);
   }
+
+  const openWrap = document.createElement("div");
+  openWrap.className = "toolbar-open-wrap";
+  const openBtn = document.createElement("button");
+  openBtn.type = "button";
+  openBtn.dataset.action = "open";
+  openBtn.textContent = "Abrir";
+  openBtn.setAttribute("aria-haspopup", "menu");
+  openBtn.setAttribute("aria-expanded", "false");
+  const openMenu = document.createElement("div");
+  openMenu.className = "toolbar-open-menu";
+  openMenu.setAttribute("role", "menu");
+  openMenu.hidden = true;
+
+  const closeOpenMenu = () => {
+    openMenu.hidden = true;
+    openBtn.setAttribute("aria-expanded", "false");
+  };
+
+  const addOpenItem = (action: string, label: string, fn: () => void) => {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.dataset.action = action;
+    item.textContent = label;
+    item.setAttribute("role", "menuitem");
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeOpenMenu();
+      run(fn)();
+    });
+    openMenu.appendChild(item);
+  };
+  addOpenItem("open-upload", "Upload", cbs.onOpenUpload);
+  addOpenItem("open-paste", "Colar texto", cbs.onOpenPaste);
+
+  openBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const show = openMenu.hidden;
+    closeOpenMenu();
+    if (show) {
+      openMenu.hidden = false;
+      openBtn.setAttribute("aria-expanded", "true");
+    }
+  });
+  document.addEventListener("click", closeOpenMenu);
+
+  openWrap.appendChild(openBtn);
+  openWrap.appendChild(openMenu);
+  const newBtnEl = actionButtons.get("new")!;
+  newBtnEl.insertAdjacentElement("afterend", openWrap);
+
   const newBtn = actionButtons.get("new")!;
   newBtn.disabled = true;
   actionButtons.get("undo")!.disabled = true;
