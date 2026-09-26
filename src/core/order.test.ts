@@ -39,32 +39,35 @@ describe("buildWhatsappOrder", () => {
 
   it("material e espessura numa linha, itens abaixo", () => {
     const text = buildWhatsappOrder(makeProject([makePanel()], "MDF Ultra 18 mm"));
-    expect(text).toContain("MDF Ultra 18 mm\r\n1x 720x560 | -");
+    expect(text).toContain("MDF Ultra 18 mm");
+    expect(text).toContain("1x 720x560 mm");
+    expect(text).toContain("Fita: sem fita");
   });
 
   it("dimensoes compactas qtd x LARGxALT", () => {
     const text = buildWhatsappOrder(makeProject([makePanel({ width: 720, height: 560, thickness: 18 })]));
-    expect(text).toContain("1x 720x560");
+    expect(text).toContain("1x 720x560 mm");
   });
 
-  it("sem fita mostra traco", () => {
+  it("sem fita indica sem fita", () => {
     const text = buildWhatsappOrder(makeProject([makePanel()]));
-    expect(text).toContain("| -");
+    expect(text).toContain("Fita: sem fita");
   });
 
-  it("fita com lados usa abreviacoes", () => {
+  it("fita lista lado e comprimento em mm", () => {
     const edges = { top: true, bottom: false, left: true, right: false };
-    const text = buildWhatsappOrder(makeProject([makePanel({ edges })]));
-    expect(text).toContain("| Sup Esq");
+    const text = buildWhatsappOrder(makeProject([makePanel({ width: 720, height: 560, edges })]));
+    expect(text).toContain("Fita: sup 720 mm, esq 560 mm");
   });
 
   it("pecas iguais agrupadas numa linha", () => {
     const panels = [
-      makePanel({ id: "a", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
-      makePanel({ id: "b", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
+      makePanel({ id: "a", name: "Lat A", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
+      makePanel({ id: "b", name: "Lat B", width: 600, height: 742, thickness: 18, edges: { top: false, bottom: true, left: true, right: true } }),
     ];
     const text = buildWhatsappOrder(makeProject(panels));
-    expect(text).toContain("2x 600x742 | Inf Esq Dir");
+    expect(text).toContain("2x 600x742 mm - Lat A; Lat B");
+    expect(text).toContain("Fita: inf 600 mm, esq 742 mm, dir 742 mm");
   });
 
   it("rodape com area e total de pecas", () => {

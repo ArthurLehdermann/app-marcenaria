@@ -1,17 +1,38 @@
 import type { Project, EdgeSide } from "./types";
-import { groupPieces, areaByThicknessM2, totalEdgeBandingM } from "./pieces";
+import { groupPieces, areaByThicknessM2, totalEdgeBandingM, type GroupedPiece } from "./pieces";
 
-const EDGE_SHORT: Record<EdgeSide, string> = {
-  top: "Sup", bottom: "Inf", left: "Esq", right: "Dir",
+const EDGE_MM_LABEL: Record<EdgeSide, string> = {
+  top: "sup",
+  bottom: "inf",
+  left: "esq",
+  right: "dir",
 };
 
-function edgeShort(e: Record<EdgeSide, boolean>): string {
-  const on = (Object.keys(EDGE_SHORT) as EdgeSide[]).filter(k => e[k]).map(k => EDGE_SHORT[k]);
-  return on.length ? on.join(" ") : "-";
+/** Comprimento de fita por lado marcado (mm), no plano de corte largura × altura. */
+export function edgeBandingDetailMm(
+  width: number,
+  height: number,
+  edges: Record<EdgeSide, boolean>,
+): string {
+  const parts: string[] = [];
+  if (edges.top) parts.push(`${EDGE_MM_LABEL.top} ${width} mm`);
+  if (edges.bottom) parts.push(`${EDGE_MM_LABEL.bottom} ${width} mm`);
+  if (edges.left) parts.push(`${EDGE_MM_LABEL.left} ${height} mm`);
+  if (edges.right) parts.push(`${EDGE_MM_LABEL.right} ${height} mm`);
+  return parts.length ? parts.join(", ") : "sem fita";
 }
 
-function formatItemLine(qty: number, width: number, height: number, edges: Record<EdgeSide, boolean>): string {
-  return `${qty}x ${width}x${height} | ${edgeShort(edges)}`;
+function formatNames(names: string[]): string {
+  const uniq = [...new Set(names.map(n => n.trim()).filter(Boolean))];
+  return uniq.join("; ");
+}
+
+function formatItemBlock(g: GroupedPiece): string {
+  const dim = `${g.qty}x ${g.width}x${g.height} mm`;
+  const names = formatNames(g.names);
+  const fita = edgeBandingDetailMm(g.width, g.height, g.edges);
+  const head = names ? `${dim} - ${names}` : dim;
+  return `${head}\n  Fita: ${fita}`;
 }
 
 export function buildWhatsappOrder(project: Project): string {
@@ -27,22 +48,22 @@ export function buildWhatsappOrder(project: Project): string {
   const base = project.settings.defaultMaterial.replace(/\s*\d+\s*mm\s*$/i, "").trimEnd();
   const thicknesses = [...byThickness.keys()].sort((a, b) => a - b);
 
-  const blocks: string[] = ["Olá! Corte e fita:"];
+  const blocks: string[] = ["Olá! Corte e fita:", ""];
 
   for (const t of thicknesses) {
     const items = byThickness.get(t)!;
-    const itemLines = items.map(g => formatItemLine(g.qty, g.width, g.height, g.edges));
-    blocks.push(`${base} ${t} mm\n${itemLines.join("\n")}`);
+    const itemLines = items.map(g => formatItemBlock(g));
+    blocks.push(`${base} ${t} mm`, itemLines.join("\n\n"));
   }
 
   const areaTotal = thicknesses.length === 1
     ? `${(area.get(thicknesses[0]) ?? 0).toFixed(2)} m2`
     : thicknesses.map(t => `${t}mm: ${(area.get(t) ?? 0).toFixed(2)} m2`).join(", ");
   const edgeTotal = `${totalEdgeBandingM(project.panels).toFixed(2)} m fita`;
-  blocks.push(`${areaTotal}, ${edgeTotal}, ${project.panels.length} pecas`);
+  blocks.push("", `${areaTotal}, ${edgeTotal}, ${project.panels.length} pecas`);
 
   // CRLF: WhatsApp preserva quebras melhor que LF sozinho
-  return blocks.join("\n\n").replace(/\n/g, "\r\n");
+  return blocks.join("\n").replace(/\n/g, "\r\n");
 }
 
 function csvQuotedNames(names: string[]): string {

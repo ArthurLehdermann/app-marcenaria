@@ -44,15 +44,17 @@ Tudo que está no repositório hoje é **V0**. A spec antiga chamava isso de “
 ```
 Olá! Corte e fita:
 
-MDF Ultra 18 mm
-2x 600x742 | Inf Esq Dir
-1x 720x560 | Sup
+MDF 18 mm
 
-0.89 m2, 4.17 m fita, 3 pecas
+1x 720x560 mm - Base balcão
+  Fita: sup 720 mm, inf 720 mm, esq 560 mm, dir 560 mm
+
+12.01 m2, 38.44 m fita, 16 pecas
 ```
 
 - Blocos separados por espessura de chapa
-- Linha compacta: `qtd x LARGxALT | lados da fita`
+- Linha: `qtd x LARGxALT mm - nomes das peças`
+- Abaixo: `Fita:` com cada lado marcado e **comprimento em mm** (sup/inf = largura, esq/dir = altura)
 - Rodapé: área (m²), metragem total de fita (m) e quantidade de peças
 - Quebras em CRLF para o WhatsApp
 
